@@ -63,6 +63,8 @@ public class DownloadManagerActivity extends Activity {
         @Bind(R.id.item_download_speed)
         TextView mItemSpeed;
 
+        DownloadTask mDownloadTask = null;
+
         public DownloadItemHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(itemView);
