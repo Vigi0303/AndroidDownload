@@ -11,49 +11,64 @@ import java.net.URL;
  * Created by Vigi on 2016/1/21.
  */
 public class HttpUrlPerformer implements HttpPerformer {
+    private HttpURLConnection mConnection;
 
     @Override
     public HttpResponse performDownloadRequest(DownloadRequest downloadRequest) {
         while (true) {
+            mConnection = null;
             if (downloadRequest.isCancel()) {
                 return null;
             }
 
-            HttpURLConnection connection = null;
             try {
                 String urlStr = downloadRequest.getUrl();
                 URL url = new URL(urlStr);
                 if (!"http".equals(url.getProtocol())) {
                     throw new MalformedURLException("url(" + url + ") must be http url!");
                 }
-                connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("Range", "bytes=" + downloadRequest.getStartPos() + "-");
+                mConnection = (HttpURLConnection) url.openConnection();
+                mConnection.setRequestMethod("GET");
+                mConnection.setRequestProperty("Range", "bytes=" + downloadRequest.getStartPos() + "-");
 
-                int responseCode = connection.getResponseCode();
+                int responseCode = mConnection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-                    downloadRequest.setRedirectUrl(connection.getHeaderField("Location"));
+                    downloadRequest.setRedirectUrl(mConnection.getHeaderField("Location"));
                     continue;
                 }
                 if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {
                     return null;
                 }
                 HttpResponse hr = new HttpResponse();
-                String lengthStr = connection.getHeaderField("Content-Length");
+                String lengthStr = mConnection.getHeaderField("Content-Length");
                 if (TextUtils.isEmpty(lengthStr)) {
-                    hr.mTotalLength = 0;
+                    hr.mContentLength = 0;
                 } else {
-                    hr.mTotalLength = Long.parseLong(lengthStr);
+                    hr.mContentLength = Long.parseLong(lengthStr);
                 }
-                hr.mContentStream = connection.getInputStream();
+                lengthStr = mConnection.getHeaderField("Content-Range");
+                if (TextUtils.isEmpty(lengthStr)) {
+                    hr.mTotalLength = hr.mContentLength;
+                } else {
+                    hr.mTotalLength = Long.parseLong(lengthStr.substring(lengthStr.lastIndexOf("/") + 1, lengthStr.length()));
+                }
+                hr.mContentStream = mConnection.getInputStream();
                 return hr;
             } catch (IOException e) {
                 return null;
             } finally {
-                if (connection != null) {
-                    connection.disconnect();
+                if (mConnection != null) {
+                    mConnection.disconnect();
                 }
             }
+        }
+    }
+
+    @Override
+    public void cancel() {
+        // TODO: 2016/1/24 to validate whether code below takes effect
+        if (mConnection != null) {
+            mConnection.disconnect();
         }
     }
 }

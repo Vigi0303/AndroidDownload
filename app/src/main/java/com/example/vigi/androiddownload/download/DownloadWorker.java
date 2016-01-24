@@ -1,12 +1,8 @@
 package com.example.vigi.androiddownload.download;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.concurrent.BlockingQueue;
 
@@ -14,13 +10,17 @@ import java.util.concurrent.BlockingQueue;
  * Created by Vigi on 2016/1/20.
  */
 public class DownloadWorker extends Thread {
+    private static final int STREAM_BUFFER = 4096;
     private BlockingQueue<DownloadRequest> mRequestQueue;
     private HttpPerformer mHttpPerformer;
-    private volatile boolean mQuit = false;
+    private DownloadListener mDownloadListener;
+    private volatile boolean mQuit = false;   // TODO: 2016/1/24 why volatile
 
-    public DownloadWorker(BlockingQueue<DownloadRequest> requestQueue, HttpPerformer httpPerformer) {
+    public DownloadWorker(BlockingQueue<DownloadRequest> requestQueue
+            , HttpPerformer httpPerformer, DownloadListener downloadListener) {
         mRequestQueue = requestQueue;
         mHttpPerformer = httpPerformer;
+        mDownloadListener = downloadListener;
     }
 
     @Override
@@ -36,39 +36,39 @@ public class DownloadWorker extends Thread {
                 continue;
             }
 
-            InputStream bis = null;
-            OutputStream bos = null;
+            BufferedInputStream bis = null;
+            RandomAccessFile rafo = null;
             HttpPerformer.HttpResponse httpResponse = mHttpPerformer.performDownloadRequest(downloadRequest);
 
-            if (httpResponse == null || httpResponse.mTotalLength == 0 || httpResponse.mContentStream == null) {
+            if (httpResponse == null
+                    || httpResponse.mTotalLength == 0
+                    || httpResponse.mContentStream == null) {
                 continue;
             }
 
             try {
                 File targetFile = downloadRequest.getTargetFile();
-                if (!targetFile.exists()) {
-                    RandomAccessFile raf = new RandomAccessFile(targetFile, "rw");
-                    raf.setLength(httpResponse.mTotalLength);
-                    raf.close();
-                }
                 bis = new BufferedInputStream(httpResponse.mContentStream);
-                bos = new BufferedOutputStream(new FileOutputStream(targetFile));
-                byte[] tmp = new byte[4096];
+                rafo = new RandomAccessFile(targetFile, "rw");
+                rafo.setLength(httpResponse.mTotalLength);
+                rafo.seek(downloadRequest.getStartPos());
+
+                byte[] tmp = new byte[STREAM_BUFFER];
                 int len;
                 while ((len = bis.read(tmp)) != -1) {
-                    bos.write(tmp, 0, len);
-                    bos.flush();
+                    rafo.write(tmp, 0, len);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+
             } finally {
+                downloadRequest.cancel();
+                mHttpPerformer.cancel();
                 try {
                     if (bis != null) {
                         bis.close();
                     }
-                    if (bos != null) {
-                        bos.flush();
-                        bos.close();
+                    if (rafo != null) {
+                        rafo.close();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

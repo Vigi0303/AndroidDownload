@@ -12,8 +12,11 @@ public interface HttpPerformer {
      */
     public HttpResponse performDownloadRequest(DownloadRequest downloadRequest);
 
+    public void cancel();
+
     public static class HttpResponse {
         public long mTotalLength;
+        public long mContentLength;
         public InputStream mContentStream;
     }
 }
