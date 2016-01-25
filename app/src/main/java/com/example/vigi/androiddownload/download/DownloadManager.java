@@ -9,22 +9,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class DownloadManager {
     private static AtomicInteger SequenceGenerator = new AtomicInteger(0);
-    private HttpPerformer mHttpPerformer;
+    private NetWorkPerformer mNetWorkPerformer;
     private DownloadWorker mWorker;
     private BlockingQueue<DownloadRequest> mRequestQueue;
-    private DownloadListener mDownloadListener;
 
     public DownloadManager() {
-        this(null, null);
+        this(null);
     }
 
-    public DownloadManager(HttpPerformer httpPerformer, DownloadListener downloadListener) {
-        if (httpPerformer == null) {
-            mHttpPerformer = new HttpUrlPerformer();
+    public DownloadManager(NetWorkPerformer netWorkPerformer) {
+        if (netWorkPerformer == null) {
+            mNetWorkPerformer = new UrlConnectionPerformer();
         } else {
-            mHttpPerformer = httpPerformer;
+            mNetWorkPerformer = netWorkPerformer;
         }
-        mDownloadListener = downloadListener;
         mRequestQueue = new PriorityBlockingQueue<>();
     }
 
@@ -39,7 +37,7 @@ public class DownloadManager {
     public void start() {
         stop();
 
-        mWorker = new DownloadWorker(mRequestQueue, mHttpPerformer);
+        mWorker = new DownloadWorker(mRequestQueue, mNetWorkPerformer);
         mWorker.start();
     }
 
