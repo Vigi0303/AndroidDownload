@@ -13,7 +13,6 @@ public class DownloadManager {
     private NetWorkPerformer mNetWorkPerformer;
     private DownloadWorker mWorker;
     private BlockingQueue<DownloadRequest> mRequestQueue;
-    private String mUserAgent;
 
     public DownloadManager() {
         this(null);

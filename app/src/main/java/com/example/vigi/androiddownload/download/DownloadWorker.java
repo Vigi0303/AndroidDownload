@@ -1,5 +1,6 @@
 package com.example.vigi.androiddownload.download;
 
+import android.os.Process;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -16,12 +17,13 @@ import java.util.concurrent.BlockingQueue;
  * Created by Vigi on 2016/1/20.
  */
 public class DownloadWorker extends Thread {
-    private static final int STREAM_BUFFER = 4096;
+    private static final int STREAM_BUFFER = 1024;
     private BlockingQueue<DownloadRequest> mRequestQueue;
     private NetWorkPerformer mNetWorkPerformer;
     private volatile boolean mQuit = false;   // TODO: 2016/1/24 why volatile
 
-    public DownloadWorker(BlockingQueue<DownloadRequest> requestQueue, NetWorkPerformer netWorkPerformer) {
+    public DownloadWorker(BlockingQueue<DownloadRequest> requestQueue
+            , NetWorkPerformer netWorkPerformer) {
         super("DownloadWorker");
         mRequestQueue = requestQueue;
         mNetWorkPerformer = netWorkPerformer;
@@ -29,6 +31,7 @@ public class DownloadWorker extends Thread {
 
     @Override
     public void run() {
+        android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         while (true) {
             DownloadRequest downloadRequest = null;
             try {
@@ -85,7 +88,7 @@ public class DownloadWorker extends Thread {
                 if (requestListener != null) {
                     requestListener.onFinish();
                 }
-                Log.d("debug", "onFinish");
+                Log.d("debug", "onFinally");
                 downloadRequest.cancel();
                 if (netWorkResponse != null) {
                     netWorkResponse.disconnect();

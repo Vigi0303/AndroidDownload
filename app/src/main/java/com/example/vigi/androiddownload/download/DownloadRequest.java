@@ -59,15 +59,15 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
         return mTargetFile;
     }
 
-    public void setRedirectUrl(String redirectUrl) {
+    void setRedirectUrl(String redirectUrl) {
         mRedirectUrl = redirectUrl;
     }
 
-    public long getStartPos() {
+    long getStartPos() {
         return mStartPos;
     }
 
-    public void setStartPos(long startPos) {
+    void setStartPos(long startPos) {
         mStartPos = startPos;
     }
 
