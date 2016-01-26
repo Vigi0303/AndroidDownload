@@ -47,18 +47,18 @@ public class DownloadWorker extends Thread {
 
             InputStream bis = null;
             OutputStream bos = null;
-            NetWorkPerformer.HttpResponse httpResponse = null;
+            NetWorkPerformer.NetWorkResponse netWorkResponse = null;
 
             try {
-                httpResponse = mNetWorkPerformer.performDownloadRequest(downloadRequest);
-                if (httpResponse == null
-                        || httpResponse.mTotalLength == 0
-                        || httpResponse.mContentStream == null) {
+                netWorkResponse = mNetWorkPerformer.performDownloadRequest(downloadRequest);
+                if (netWorkResponse == null
+                        || netWorkResponse.mTotalLength == 0
+                        || netWorkResponse.mContentStream == null) {
                     throw new DownloadError();
                 }
                 File targetFile = downloadRequest.getTargetFile();
-                bis = new BufferedInputStream(httpResponse.mContentStream);
-                bos = generateWriteStream(targetFile, httpResponse.mTotalLength, downloadRequest.getStartPos());
+                bis = new BufferedInputStream(netWorkResponse.mContentStream);
+                bos = generateWriteStream(targetFile, netWorkResponse.mTotalLength, downloadRequest.getStartPos());
                 byte[] tmp = new byte[STREAM_BUFFER];
                 long currentPos = downloadRequest.getStartPos();
                 int len;
@@ -69,11 +69,11 @@ public class DownloadWorker extends Thread {
                         requestListener.onLoading(currentPos);
                     }
                     Log.d("debug", "onLoading: " + currentPos);
-                    if (downloadRequest.isCancel()) {
-                        break;
-                    }
                     if (Thread.interrupted()) {
                         return;
+                    }
+                    if (downloadRequest.isCancel()) {
+                        break;
                     }
                 }
                 Log.d("debug", "finish");
@@ -87,8 +87,8 @@ public class DownloadWorker extends Thread {
                 }
                 Log.d("debug", "onFinish");
                 downloadRequest.cancel();
-                if (httpResponse != null) {
-                    httpResponse.disconnect();
+                if (netWorkResponse != null) {
+                    netWorkResponse.disconnect();
                 }
                 try {
                     if (bis != null) {
