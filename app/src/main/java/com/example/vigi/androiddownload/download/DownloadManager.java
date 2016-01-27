@@ -1,5 +1,7 @@
 package com.example.vigi.androiddownload.download;
 
+import android.os.Looper;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -10,19 +12,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DownloadManager {
     private static final String DEFAULT_USER_AGENT = "AndroidDownload / 1.0";   // TODO: 2016/1/26 to be confirmed
     private static AtomicInteger SequenceGenerator = new AtomicInteger(0);
-    private NetWorkPerformer mNetWorkPerformer;
+    private UrlConnectionPerformer mNetWorkPerformer;
     private DownloadWorker mWorker;
     private BlockingQueue<DownloadRequest> mRequestQueue;
+    private DownloadDelivery mDelivery;
 
     public DownloadManager() {
-        this(null);
+        this(null, null);
     }
 
-    public DownloadManager(NetWorkPerformer netWorkPerformer) {
+    public DownloadManager(UrlConnectionPerformer netWorkPerformer, DownloadDelivery delivery) {
         if (netWorkPerformer == null) {
             mNetWorkPerformer = new UrlConnectionPerformer(DEFAULT_USER_AGENT);
         } else {
             mNetWorkPerformer = netWorkPerformer;
+        }
+        if (delivery == null) {
+            mDelivery = new DownloadDelivery(Looper.getMainLooper());
+        } else {
+            mDelivery = delivery;
         }
         mRequestQueue = new PriorityBlockingQueue<>();
     }
@@ -38,7 +46,7 @@ public class DownloadManager {
     public void start() {
         stop();
 
-        mWorker = new DownloadWorker(mRequestQueue, mNetWorkPerformer);
+        mWorker = new DownloadWorker(mRequestQueue, mNetWorkPerformer, mDelivery);
         mWorker.start();
     }
 

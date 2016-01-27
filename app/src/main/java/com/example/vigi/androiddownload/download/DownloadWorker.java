@@ -19,14 +19,16 @@ import java.util.concurrent.BlockingQueue;
 public class DownloadWorker extends Thread {
     private static final int STREAM_BUFFER = 1024;
     private BlockingQueue<DownloadRequest> mRequestQueue;
-    private NetWorkPerformer mNetWorkPerformer;
+    private UrlConnectionPerformer mNetWorkPerformer;
+    private DownloadDelivery mDelivery;
     private volatile boolean mQuit = false;   // TODO: 2016/1/24 why volatile
 
     public DownloadWorker(BlockingQueue<DownloadRequest> requestQueue
-            , NetWorkPerformer netWorkPerformer) {
+            , UrlConnectionPerformer netWorkPerformer, DownloadDelivery delivery) {
         super("DownloadWorker");
         mRequestQueue = requestQueue;
         mNetWorkPerformer = netWorkPerformer;
+        mDelivery = delivery;
     }
 
     @Override
@@ -42,36 +44,29 @@ public class DownloadWorker extends Thread {
                 }
                 continue;
             }
-            DownloadRequest.RequestListener requestListener = downloadRequest.getListener();
-            if (requestListener != null) {
-                requestListener.onStartWorker();
-            }
-            Log.d("debug", "onStartWorker");
+            mDelivery.postDispatched(downloadRequest);
 
             InputStream bis = null;
             OutputStream bos = null;
-            NetWorkPerformer.NetWorkResponse netWorkResponse = null;
+            UrlConnectionResponse response = null;
 
             try {
-                netWorkResponse = mNetWorkPerformer.performDownloadRequest(downloadRequest);
-                if (netWorkResponse == null
-                        || netWorkResponse.mTotalLength == 0
-                        || netWorkResponse.mContentStream == null) {
+                response = mNetWorkPerformer.performDownloadRequest(downloadRequest);
+                if (response == null
+                        || response.mTotalLength == 0
+                        || response.mContentStream == null) {
                     throw new DownloadError();
                 }
                 File targetFile = downloadRequest.getTargetFile();
-                bis = new BufferedInputStream(netWorkResponse.mContentStream);
-                bos = generateWriteStream(targetFile, netWorkResponse.mTotalLength, downloadRequest.getStartPos());
+                bis = new BufferedInputStream(response.mContentStream);
+                bos = generateWriteStream(targetFile, response.mTotalLength, downloadRequest.getStartPos());
                 byte[] tmp = new byte[STREAM_BUFFER];
                 long currentPos = downloadRequest.getStartPos();
                 int len;
                 while ((len = bis.read(tmp)) != -1) {
                     bos.write(tmp, 0, len);
                     currentPos += len;
-                    if (requestListener != null) {
-                        requestListener.onLoading(currentPos);
-                    }
-                    Log.d("debug", "onLoading: " + currentPos);
+                    mDelivery.postLoading(downloadRequest, currentPos);
                     if (Thread.interrupted()) {
                         return;
                     }
@@ -85,13 +80,10 @@ public class DownloadWorker extends Thread {
                 Log.d("debug", "error");
                 e.printStackTrace();
             } finally {
-                if (requestListener != null) {
-                    requestListener.onFinish();
-                }
-                Log.d("debug", "onFinally");
+                mDelivery.postFinish(downloadRequest, response);
                 downloadRequest.cancel();
-                if (netWorkResponse != null) {
-                    netWorkResponse.disconnect();
+                if (response != null) {
+                    response.disconnect();
                 }
                 try {
                     if (bis != null) {
