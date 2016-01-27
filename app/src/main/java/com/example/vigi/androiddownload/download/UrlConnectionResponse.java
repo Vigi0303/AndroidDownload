@@ -1,7 +1,5 @@
 package com.example.vigi.androiddownload.download;
 
-import com.example.vigi.androiddownload.download.base.NetWorkResponse;
-
 import java.net.HttpURLConnection;
 
 public class UrlConnectionResponse extends NetWorkResponse {

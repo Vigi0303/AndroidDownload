@@ -29,13 +29,12 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        mUrlText.setText(URLS[3]);
+        mUrlText.setText(URLS[1]);
     }
 
     @OnClick(R.id.add_to_download)
     void onAddClick() {
         String url = mUrlText.getText().toString();
-        // TODO: 2016/1/18 add to download
         Bundle extra = new Bundle();
         extra.putInt(DownloadService.BUNDLE_ACTION, DownloadService.ACTION_NEW_DOWNLOAD_VIDEO);
         extra.putString(DownloadService.BUNDLE_URL, url);

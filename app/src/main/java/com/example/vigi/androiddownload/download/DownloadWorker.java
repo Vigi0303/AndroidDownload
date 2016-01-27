@@ -1,7 +1,6 @@
 package com.example.vigi.androiddownload.download;
 
 import android.os.Process;
-import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -11,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -52,11 +52,11 @@ public class DownloadWorker extends Thread {
 
             try {
                 response = mNetWorkPerformer.performDownloadRequest(downloadRequest);
-                if (response == null
-                        || response.mTotalLength == 0
-                        || response.mContentStream == null) {
-                    throw new DownloadError();
+                if (response == null || downloadRequest.isCancel()) {
+                    continue;
                 }
+                validateServerData(downloadRequest, response);
+
                 File targetFile = downloadRequest.getTargetFile();
                 bis = new BufferedInputStream(response.mContentStream);
                 bos = generateWriteStream(targetFile, response.mTotalLength, downloadRequest.getStartPos());
@@ -74,11 +74,19 @@ public class DownloadWorker extends Thread {
                         break;
                     }
                 }
-                Log.d("debug", "finish");
+            } catch (IOException e) {
+                if (response == null) {
+                    response = new UrlConnectionResponse(null);
+                    response.mError = new DownloadError.NetWorkError();
+                } else if (e instanceof SocketException) {
+                } else {
+                    // unexpected io error
+                    response.mError = new DownloadError(e);
+                }
+            } catch (DownloadError error) {
+                response.mError = error;
             } catch (Exception e) {
-                // TODO: 2016/1/25 handle exception
-                Log.d("debug", "error");
-                e.printStackTrace();
+                // unhandled exception
             } finally {
                 mDelivery.postFinish(downloadRequest, response);
                 downloadRequest.cancel();
@@ -105,6 +113,13 @@ public class DownloadWorker extends Thread {
         raf.setLength(fileLength);
         raf.seek(startPos);
         return new BufferedOutputStream(new FileOutputStream(raf.getFD()));
+    }
+
+    protected void validateServerData(DownloadRequest request, UrlConnectionResponse response) throws DownloadError.ServerError {
+        // TODO: 2016/1/26 and do not support 0 length download
+        if (response.mContentLength == 0 || response.mTotalLength == 0) {
+            throw new DownloadError.ServerError("url(" + request.getOriginalUrl() + ") does not return content length");
+        }
     }
 
     public void quit() {

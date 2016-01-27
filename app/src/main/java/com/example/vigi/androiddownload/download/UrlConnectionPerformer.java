@@ -2,8 +2,6 @@ package com.example.vigi.androiddownload.download;
 
 import android.text.TextUtils;
 
-import com.example.vigi.androiddownload.download.base.NetWorkPerformer;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -14,7 +12,7 @@ import javax.net.ssl.SSLSocketFactory;
 /**
  * Created by Vigi on 2016/1/21.
  */
-public class UrlConnectionPerformer extends NetWorkPerformer<DownloadRequest, UrlConnectionResponse> {
+public class UrlConnectionPerformer extends NetWorkPerformer<UrlConnectionResponse> {
 
     private SSLSocketFactory mSslSocketFactory;
 
@@ -55,13 +53,15 @@ public class UrlConnectionPerformer extends NetWorkPerformer<DownloadRequest, Ur
             connection.setReadTimeout(DEFAULT_TIMEOUT_MS);
             connection.connect();
 
+            UrlConnectionResponse hcr = new UrlConnectionResponse(connection);
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
                 request.setRedirectUrl(connection.getHeaderField("Location"));
                 continue;
             }
             if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {
-                return null;
+                hcr.mError = new DownloadError.ServerError("url(" + request.getOriginalUrl() + ") return error statusCode(" + responseCode + ")");
+                return hcr;
             }
             // check whether server support range, download from start if not
             boolean isAcceptRange = true;
@@ -77,23 +77,22 @@ public class UrlConnectionPerformer extends NetWorkPerformer<DownloadRequest, Ur
                 request.setStartPos(0);
             }
             // parse content length
-            // TODO: 2016/1/26 and do not support 0 length download
-            UrlConnectionResponse hr = new UrlConnectionResponse(connection);
             String lengthStr = connection.getHeaderField("Content-Length");
             if (TextUtils.isEmpty(lengthStr)) {
-                hr.mContentLength = 0;
+                hcr.mContentLength = 0;
             } else {
-                hr.mContentLength = Long.parseLong(lengthStr);
+                hcr.mContentLength = Long.parseLong(lengthStr);
             }
-            hr.mTotalLength = hr.mContentLength;
+            hcr.mTotalLength = hcr.mContentLength;
             if (isAcceptRange) {
                 lengthStr = connection.getHeaderField("Content-Range");
                 if (!TextUtils.isEmpty(lengthStr)) {
-                    hr.mTotalLength = Long.parseLong(lengthStr.substring(lengthStr.lastIndexOf("/") + 1, lengthStr.length()));
+                    hcr.mTotalLength = Long.parseLong(lengthStr.substring(lengthStr.lastIndexOf("/") + 1, lengthStr.length()));
                 }
+                hcr.mSupportRange = true;
             }
-            hr.mContentStream = connection.getInputStream();
-            return hr;
+            hcr.mContentStream = connection.getInputStream();
+            return hcr;
         }
     }
 }
