@@ -19,12 +19,12 @@ import java.util.concurrent.BlockingQueue;
 public class DownloadWorker extends Thread {
     private static final int STREAM_BUFFER = 1024;
     private BlockingQueue<DownloadRequest> mRequestQueue;
-    private UrlConnectionPerformer mNetWorkPerformer;
+    private NetWorkPerformer mNetWorkPerformer;
     private DownloadDelivery mDelivery;
     private volatile boolean mQuit = false;   // TODO: 2016/1/24 why volatile
 
     public DownloadWorker(BlockingQueue<DownloadRequest> requestQueue
-            , UrlConnectionPerformer netWorkPerformer, DownloadDelivery delivery) {
+            , NetWorkPerformer netWorkPerformer, DownloadDelivery delivery) {
         super("DownloadWorker");
         mRequestQueue = requestQueue;
         mNetWorkPerformer = netWorkPerformer;
@@ -33,7 +33,7 @@ public class DownloadWorker extends Thread {
 
     @Override
     public void run() {
-        android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         while (true) {
             DownloadRequest downloadRequest = null;
             try {
@@ -48,25 +48,26 @@ public class DownloadWorker extends Thread {
 
             InputStream bis = null;
             OutputStream bos = null;
-            UrlConnectionResponse response = null;
+            NetWorkResponse response = null;
 
             try {
                 response = mNetWorkPerformer.performDownloadRequest(downloadRequest);
-                if (response == null || downloadRequest.isCancel()) {
+                if (downloadRequest.isCancel()) {
                     continue;
                 }
                 validateServerData(downloadRequest, response);
+                mDelivery.postTotalLength(downloadRequest, response.mTotalLength);
 
                 File targetFile = downloadRequest.getTargetFile();
                 bis = new BufferedInputStream(response.mContentStream);
                 bos = generateWriteStream(targetFile, response.mTotalLength, downloadRequest.getStartPos());
                 byte[] tmp = new byte[STREAM_BUFFER];
-                long currentPos = downloadRequest.getStartPos();
+                long downloadedBytes = 0;
                 int len;
                 while ((len = bis.read(tmp)) != -1) {
                     bos.write(tmp, 0, len);
-                    currentPos += len;
-                    mDelivery.postLoading(downloadRequest, currentPos);
+                    downloadedBytes += len;
+                    mDelivery.postLoading(downloadRequest, downloadedBytes);
                     if (Thread.interrupted()) {
                         return;
                     }
@@ -74,6 +75,8 @@ public class DownloadWorker extends Thread {
                         break;
                     }
                 }
+            } catch (InterruptedException e) {
+                continue;
             } catch (IOException e) {
                 if (response == null) {
                     response = new UrlConnectionResponse(null);
@@ -109,13 +112,18 @@ public class DownloadWorker extends Thread {
     }
 
     private OutputStream generateWriteStream(File file, long fileLength, long startPos) throws IOException {
+        if (!file.exists() && startPos == 0) {
+            RandomAccessFile raf = new RandomAccessFile(file, "rw");
+            raf.setLength(fileLength);
+            raf.close();
+            return new BufferedOutputStream(new FileOutputStream(file));
+        }
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
-        raf.setLength(fileLength);
         raf.seek(startPos);
         return new BufferedOutputStream(new FileOutputStream(raf.getFD()));
     }
 
-    protected void validateServerData(DownloadRequest request, UrlConnectionResponse response) throws DownloadError.ServerError {
+    protected void validateServerData(DownloadRequest request, NetWorkResponse response) throws DownloadError.ServerError {
         // TODO: 2016/1/26 and do not support 0 length download
         if (response.mContentLength == 0 || response.mTotalLength == 0) {
             throw new DownloadError.ServerError("url(" + request.getOriginalUrl() + ") does not return content length");

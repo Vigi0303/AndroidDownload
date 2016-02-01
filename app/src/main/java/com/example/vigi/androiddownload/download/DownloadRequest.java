@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Created by Vigi on 2016/1/27.
@@ -15,7 +14,10 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     private String mRedirectUrl;
     private boolean mCancel = false;
     private File mTargetFile;
+    private NetWorkResponse mResponse;
     private long mStartPos = 0;
+    private long mDownloadedBytes = 0;
+    private long mTotalBytes = 0;
 
     public DownloadRequest(@NonNull String urlStr, @NonNull File file) {
         this(urlStr, file, 0);
@@ -24,16 +26,6 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     public DownloadRequest(@NonNull String urlStr, @NonNull File file, long startPos) {
         if (TextUtils.isEmpty(urlStr)) {
             throw new IllegalArgumentException("urlStr can not be empty!");
-        }
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if (!file.isFile()) {
-            throw new IllegalArgumentException("A illegal file!");
         }
 
         mOriginalUrl = urlStr;
@@ -69,6 +61,30 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
         mStartPos = startPos;
     }
 
+    protected NetWorkResponse getResponse() {
+        return mResponse;
+    }
+
+    protected void setResponse(NetWorkResponse response) {
+        mResponse = response;
+    }
+
+    protected void setDownloadedBytes(long downloadedBytes) {
+        mDownloadedBytes = downloadedBytes;
+    }
+
+    public long getCurrentBytes() {
+        return mStartPos + mDownloadedBytes;
+    }
+
+    public long getTotalBytes() {
+        return mTotalBytes;
+    }
+
+    protected void setTotalBytes(long totalBytes) {
+        mTotalBytes = totalBytes;
+    }
+
     /**
      * cancel后无法再次启动
      */
@@ -87,6 +103,10 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     }
 
     protected void onDispatched() {
+
+    }
+
+    protected void onReadLength(long totalBytes) {
 
     }
 

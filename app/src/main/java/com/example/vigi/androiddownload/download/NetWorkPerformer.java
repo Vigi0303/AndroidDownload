@@ -14,5 +14,5 @@ public abstract class NetWorkPerformer<T extends NetWorkResponse> {
         mUserAgent = userAgent;
     }
 
-    public abstract T performDownloadRequest(DownloadRequest request) throws IOException, DownloadError;
+    public abstract T performDownloadRequest(DownloadRequest request) throws IOException, DownloadError, InterruptedException;
 }

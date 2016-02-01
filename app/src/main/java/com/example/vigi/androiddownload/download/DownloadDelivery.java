@@ -2,6 +2,7 @@ package com.example.vigi.androiddownload.download;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 /**
@@ -11,51 +12,65 @@ public class DownloadDelivery {
     private static final int MSG_DISPATCHED = 1;
     private static final int MSG_FINISH = 2;
     private static final int MSG_LOADING = 3;
+    private static final int MSG_READ_LENGTH = 4;
+
     protected Handler mHandler;
 
     public DownloadDelivery(Looper looper) {
-        mHandler = new Handler(looper == null ? Looper.getMainLooper() : looper);
+        mHandler = new DeliveryHandler(looper == null ? Looper.getMainLooper() : looper);
     }
 
     public void postDispatched(DownloadRequest request) {
-        mHandler.post(new DownloadDeliveryRunnable(request, null, 0, MSG_DISPATCHED));
+        mHandler.obtainMessage(MSG_DISPATCHED, request).sendToTarget();
     }
 
     public void postFinish(DownloadRequest request, NetWorkResponse response) {
-        mHandler.post(new DownloadDeliveryRunnable(request, response, 0, MSG_FINISH));
+        request.setResponse(response);
+        mHandler.obtainMessage(MSG_FINISH, request).sendToTarget();
     }
 
     public void postLoading(DownloadRequest request, long downloadedBytes) {
-        mHandler.post(new DownloadDeliveryRunnable(request, null, downloadedBytes, MSG_LOADING));
+        request.setDownloadedBytes(downloadedBytes);
+        mHandler.obtainMessage(MSG_LOADING, request).sendToTarget();
     }
 
-    class DownloadDeliveryRunnable implements Runnable {
-        private DownloadRequest mRequest;
-        private NetWorkResponse mResponse;
-        private long mDownloadedBytes;
-        private int mMsg;
+    public void postTotalLength(DownloadRequest request, long totalBytes) {
+        request.setTotalBytes(totalBytes);
+        mHandler.obtainMessage(MSG_READ_LENGTH, request).sendToTarget();
+    }
 
-        public DownloadDeliveryRunnable(DownloadRequest request, NetWorkResponse response, long downloadedBytes, int msg) {
-            mRequest = request;
-            mResponse = response;
-            mDownloadedBytes = downloadedBytes;
-            mMsg = msg;
+    class DeliveryHandler extends Handler {
+
+        public DeliveryHandler(Looper looper) {
+            super(looper);
         }
 
         @Override
-        public void run() {
-            switch (mMsg) {
-                case MSG_DISPATCHED:
-                    Log.d("debug", "request(" + mRequest.getOriginalUrl() + ")onDispatched");
-                    mRequest.onDispatched();
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MSG_DISPATCHED: {
+                    DownloadRequest request = (DownloadRequest) msg.obj;
+                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onDispatched");
+                    request.onDispatched();
                     break;
-                case MSG_FINISH:
-                    Log.d("debug", "request(" + mRequest.getOriginalUrl() + ")onFinish");
-                    mRequest.onFinish(mResponse);
-                case MSG_LOADING:
-                    Log.d("debug", "request(" + mRequest.getOriginalUrl() + ")onLoading");
-                    mRequest.onLoading(mDownloadedBytes);
+                }
+                case MSG_FINISH: {
+                    DownloadRequest request = (DownloadRequest) msg.obj;
+                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onFinish");
+                    request.onFinish(request.getResponse());
+                }
+                case MSG_LOADING: {
+                    DownloadRequest request = (DownloadRequest) msg.obj;
+                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onLoading");
+                    request.onLoading(request.getCurrentBytes());
+                }
+                case MSG_READ_LENGTH: {
+                    DownloadRequest request = (DownloadRequest) msg.obj;
+                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onReadLength");
+                    request.onReadLength(request.getTotalBytes());
+                }
                 default:
+                    Log.w("warn", "unknown msg to deliver");
             }
         }
     }

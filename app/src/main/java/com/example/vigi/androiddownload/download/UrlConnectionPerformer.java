@@ -28,10 +28,10 @@ public class UrlConnectionPerformer extends NetWorkPerformer<UrlConnectionRespon
     }
 
     @Override
-    public UrlConnectionResponse performDownloadRequest(DownloadRequest request) throws IOException {
+    public UrlConnectionResponse performDownloadRequest(DownloadRequest request) throws IOException, InterruptedException {
         while (true) {
             if (request.isCancel()) {
-                return null;
+                throw new InterruptedException("request has been canceled");
             }
 
             String urlStr = request.getUrl();
