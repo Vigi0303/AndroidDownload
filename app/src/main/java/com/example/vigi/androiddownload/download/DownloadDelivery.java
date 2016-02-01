@@ -58,16 +58,19 @@ public class DownloadDelivery {
                     DownloadRequest request = (DownloadRequest) msg.obj;
                     Log.d("debug", "request(" + request.getOriginalUrl() + ")onFinish");
                     request.onFinish(request.getResponse());
+                    break;
                 }
                 case MSG_LOADING: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
                     Log.d("debug", "request(" + request.getOriginalUrl() + ")onLoading");
                     request.onLoading(request.getCurrentBytes());
+                    break;
                 }
                 case MSG_READ_LENGTH: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
                     Log.d("debug", "request(" + request.getOriginalUrl() + ")onReadLength");
                     request.onReadLength(request.getTotalBytes());
+                    break;
                 }
                 default:
                     Log.w("warn", "unknown msg to deliver");
