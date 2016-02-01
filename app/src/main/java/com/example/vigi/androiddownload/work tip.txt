@@ -1,0 +1,30 @@
+daily task
+
+
+handle net exception
+custom time out stuff
+DAO
+make file name tmp until download completed
+
+
+ill statet ex   setinput
+recvfrom failed: ECONNRESET (Connection reset by peer)
+
+
+error type
+	todo list
+
+	connection.connect();
+	java.net.UnknownHostException: Unable to resolve host "down.mumayi.com": No address associated with hostname
+	UnknownHostException extends IOException
+
+	connection.setDoInput(true);
+	may throw IllegalStateException when connection is connected that we can't handle
+	IllegalStateException extends RuntimeException
+
+	int responseCode = connection.getResponseCode();
+	java.net.SocketException: sendto failed: ETIMEDOUT (Connection timed out)
+	SocketException extends IOException
+
+	while ((len = bis.read(tmp)) != -1)
+	java.net.SocketException: sendto failed: ETIMEDOUT (Connection timed out)

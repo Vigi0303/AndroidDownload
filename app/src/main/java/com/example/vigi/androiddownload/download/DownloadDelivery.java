@@ -62,7 +62,7 @@ public class DownloadDelivery {
                 }
                 case MSG_LOADING: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onLoading");
+//                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onLoading");
                     request.onLoading(request.getCurrentBytes());
                     break;
                 }

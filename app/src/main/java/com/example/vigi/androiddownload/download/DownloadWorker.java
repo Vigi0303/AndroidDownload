@@ -2,6 +2,8 @@ package com.example.vigi.androiddownload.download;
 
 import android.os.Process;
 
+import com.orhanobut.logger.Logger;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -60,10 +62,13 @@ public class DownloadWorker extends Thread {
 
                 File targetFile = downloadRequest.getTargetFile();
                 bis = new BufferedInputStream(response.mContentStream);
+                // TODO: 2016/2/1 file io exception
                 bos = generateWriteStream(targetFile, response.mTotalLength, downloadRequest.getStartPos());
                 byte[] tmp = new byte[STREAM_BUFFER];
                 long downloadedBytes = 0;
                 int len;
+                // TODO: 2016/2/1 IOException
+                // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
                 while ((len = bis.read(tmp)) != -1) {
                     bos.write(tmp, 0, len);
                     downloadedBytes += len;
@@ -78,6 +83,7 @@ public class DownloadWorker extends Thread {
             } catch (InterruptedException e) {
                 continue;
             } catch (IOException e) {
+                Logger.e(e, "vigi");
                 if (response == null) {
                     response = new UrlConnectionResponse(null);
                     response.mError = new DownloadError.NetWorkError();
