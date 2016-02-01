@@ -6,13 +6,8 @@ import java.io.IOException;
  * Thread Safety Performer
  * Created by Vigi on 2016/1/22.
  */
-public abstract class NetWorkPerformer<T extends NetWorkResponse> {
-    protected static final int DEFAULT_TIMEOUT_MS = 5000;
-    protected String mUserAgent;
+public interface NetWorkPerformer<T extends NetWorkResponse> {
+    public static final int DEFAULT_TIMEOUT_MS = 5000;
 
-    public NetWorkPerformer(String userAgent) {
-        mUserAgent = userAgent;
-    }
-
-    public abstract T performDownloadRequest(DownloadRequest request) throws IOException, DownloadError, InterruptedException;
+    public T performDownloadRequest(DownloadRequest request) throws IOException, DownloadError, InterruptedException;
 }

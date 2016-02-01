@@ -12,18 +12,18 @@ import javax.net.ssl.SSLSocketFactory;
 /**
  * Created by Vigi on 2016/1/21.
  */
-public class UrlConnectionPerformer extends NetWorkPerformer<UrlConnectionResponse> {
+public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionResponse> {
 
     private SSLSocketFactory mSslSocketFactory;
+    private String mUserAgent;
 
 
     public UrlConnectionPerformer(String userAgent) {
-        super(userAgent);
-
+        this(userAgent, null);
     }
 
     public UrlConnectionPerformer(String userAgent, SSLSocketFactory sslSocketFactory) {
-        super(userAgent);
+        mUserAgent = userAgent;
         mSslSocketFactory = sslSocketFactory;
     }
 
