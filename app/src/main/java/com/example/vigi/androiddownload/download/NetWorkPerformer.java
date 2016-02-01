@@ -1,6 +1,6 @@
 package com.example.vigi.androiddownload.download;
 
-import java.io.IOException;
+import java.net.MalformedURLException;
 
 /**
  * Thread Safety Performer
@@ -9,5 +9,6 @@ import java.io.IOException;
 public interface NetWorkPerformer<T extends NetWorkResponse> {
     public static final int DEFAULT_TIMEOUT_MS = 5000;
 
-    public T performDownloadRequest(DownloadRequest request) throws IOException, DownloadError, InterruptedException;
+    public T performDownloadRequest(DownloadRequest request)
+            throws InterruptedException, MalformedURLException, DownloadException;
 }

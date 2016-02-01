@@ -7,7 +7,6 @@ DAO
 make file name tmp until download completed
 
 
-ill statet ex   setinput
 recvfrom failed: ECONNRESET (Connection reset by peer)
 
 
@@ -28,3 +27,12 @@ error type
 
 	while ((len = bis.read(tmp)) != -1)
 	java.net.SocketException: sendto failed: ETIMEDOUT (Connection timed out)
+
+
+	parse exception
+
+
+
+two question
+	how to handle time out with retry in DownloadWorker
+	how to delivery response while UrlConnectionPerformer.performDownloadRequest throw exception and return null

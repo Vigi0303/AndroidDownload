@@ -86,13 +86,13 @@ public class DownloadWorker extends Thread {
                 Logger.e(e, "vigi");
                 if (response == null) {
                     response = new UrlConnectionResponse(null);
-                    response.mError = new DownloadError.NetWorkError();
+                    response.mError = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN);
                 } else if (e instanceof SocketException) {
                 } else {
                     // unexpected io error
-                    response.mError = new DownloadError(e);
+                    response.mError = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
                 }
-            } catch (DownloadError error) {
+            } catch (DownloadException error) {
                 response.mError = error;
             } catch (Exception e) {
                 // unhandled exception
@@ -129,10 +129,10 @@ public class DownloadWorker extends Thread {
         return new BufferedOutputStream(new FileOutputStream(raf.getFD()));
     }
 
-    protected void validateServerData(DownloadRequest request, NetWorkResponse response) throws DownloadError.ServerError {
+    protected void validateServerData(DownloadRequest request, NetWorkResponse response) throws DownloadException {
         // TODO: 2016/1/26 and do not support 0 length download
         if (response.mContentLength == 0 || response.mTotalLength == 0) {
-            throw new DownloadError.ServerError("url(" + request.getOriginalUrl() + ") does not return content length");
+            throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE, "url(" + request.getOriginalUrl() + ") does not return content length");
         }
     }
 
