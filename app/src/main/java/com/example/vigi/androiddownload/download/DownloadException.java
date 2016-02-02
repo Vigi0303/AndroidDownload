@@ -39,6 +39,10 @@ public class DownloadException extends Exception {
 
     public static final int EXCEPTION_CODE_NO_CONNECTION = 103;
 
+    public static final int EXCEPTION_CODE_LOCAL_IO = 104;
+
+    public static final int EXCEPTION_CODE_BAD_URL = 105;
+
     /**
      * include all unexpected exceptions and we should specific it when it comes out
      */
