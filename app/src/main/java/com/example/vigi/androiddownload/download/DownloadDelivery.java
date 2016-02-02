@@ -24,8 +24,8 @@ public class DownloadDelivery {
         mHandler.obtainMessage(MSG_DISPATCHED, request).sendToTarget();
     }
 
-    public void postFinish(DownloadRequest request, NetWorkResponse response) {
-        request.setResponse(response);
+    public void postFinish(DownloadRequest request, DownloadResult result) {
+        request.setResult(result);
         mHandler.obtainMessage(MSG_FINISH, request).sendToTarget();
     }
 
@@ -57,7 +57,7 @@ public class DownloadDelivery {
                 case MSG_FINISH: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
                     Log.d("debug", "request(" + request.getOriginalUrl() + ")onFinish");
-                    request.onFinish(request.getResponse());
+                    request.onFinish(request.getResult());
                     break;
                 }
                 case MSG_LOADING: {

@@ -35,4 +35,3 @@ error type
 
 two question
 	how to handle time out with retry in DownloadWorker
-	how to delivery response while UrlConnectionPerformer.performDownloadRequest throw exception and return null

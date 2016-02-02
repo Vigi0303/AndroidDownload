@@ -40,7 +40,7 @@ public class DownloadException extends Exception {
     public static final int EXCEPTION_CODE_NO_CONNECTION = 103;
 
     /**
-     * a unexpected exception and we should specific it when it comes out
+     * include all unexpected exceptions and we should specific it when it comes out
      */
     public static final int EXCEPTION_CODE_UNKNOWN = 999;
 

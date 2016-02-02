@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -51,6 +50,7 @@ public class DownloadWorker extends Thread {
             InputStream bis = null;
             OutputStream bos = null;
             NetWorkResponse response = null;
+            DownloadException error = null;
 
             try {
                 response = mNetWorkPerformer.performDownloadRequest(downloadRequest);
@@ -84,20 +84,11 @@ public class DownloadWorker extends Thread {
                 continue;
             } catch (IOException e) {
                 Logger.e(e, "vigi");
-                if (response == null) {
-                    response = new UrlConnectionResponse(null);
-                    response.mError = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN);
-                } else if (e instanceof SocketException) {
-                } else {
-                    // unexpected io error
-                    response.mError = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
-                }
-            } catch (DownloadException error) {
-                response.mError = error;
             } catch (Exception e) {
                 // unhandled exception
+                error = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
             } finally {
-                mDelivery.postFinish(downloadRequest, response);
+                mDelivery.postFinish(downloadRequest, new DownloadResult(error));
                 downloadRequest.cancel();
                 if (response != null) {
                     response.disconnect();

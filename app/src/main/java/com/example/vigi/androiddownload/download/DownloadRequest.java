@@ -14,10 +14,10 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     private String mRedirectUrl;
     private boolean mCancel = false;
     private File mTargetFile;
-    private NetWorkResponse mResponse;
     private long mStartPos = 0;
     private long mDownloadedBytes = 0;
     private long mTotalBytes = 0;
+    private DownloadResult mResult;
 
     public DownloadRequest(@NonNull String urlStr, @NonNull File file) {
         this(urlStr, file, 0);
@@ -61,12 +61,12 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
         mStartPos = startPos;
     }
 
-    protected NetWorkResponse getResponse() {
-        return mResponse;
+    protected DownloadResult getResult() {
+        return mResult;
     }
 
-    protected void setResponse(NetWorkResponse response) {
-        mResponse = response;
+    protected void setResult(DownloadResult result) {
+        mResult = result;
     }
 
     protected void setDownloadedBytes(long downloadedBytes) {
@@ -110,7 +110,7 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
 
     }
 
-    protected void onFinish(NetWorkResponse response) {
+    protected void onFinish(DownloadResult result) {
 
     }
 
