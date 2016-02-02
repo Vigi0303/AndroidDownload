@@ -30,3 +30,9 @@ error type
 
 
 	parse exception
+
+
+time out
+	bad or none network may block thread, or return failed immediately
+	time out policy handle the failure and sleep short and retry automatically
+	we can also block the thread manually when we need although the network is normal

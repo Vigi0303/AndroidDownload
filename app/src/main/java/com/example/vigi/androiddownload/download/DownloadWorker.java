@@ -1,7 +1,5 @@
 package com.example.vigi.androiddownload.download;
 
-import com.orhanobut.logger.Logger;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -15,7 +13,7 @@ import java.io.RandomAccessFile;
  * Created by Vigi on 2016/1/20.
  */
 public class DownloadWorker {
-    private static final int SLEEP_INTERNAL = 500;
+    private static final int SLEEP_INTERNAL_MS = 500;
     private static final int STREAM_BUFFER = 1024;
     private NetWorkPerformer mNetWorkPerformer;
     private DownloadDelivery mDelivery;
@@ -61,8 +59,8 @@ public class DownloadWorker {
                     return null;
                 }
             }
-        } catch (IOException e) {
-            Logger.e(e, "vigi");
+        } catch (InterruptedException e) {
+            throw e;
         } catch (Exception e) {
             // unhandled exception
             error = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);

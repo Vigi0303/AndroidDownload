@@ -32,10 +32,10 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
 
     @Override
     public UrlConnectionResponse performDownloadRequest(DownloadRequest request)
-            throws InterruptedException, MalformedURLException, DownloadException {
+            throws MalformedURLException, DownloadException {
         while (true) {
             if (request.isCancel()) {
-                throw new InterruptedException("request has been canceled");
+                return null;
             }
 
             try {

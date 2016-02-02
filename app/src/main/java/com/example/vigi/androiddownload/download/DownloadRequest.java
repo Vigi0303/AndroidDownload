@@ -17,6 +17,7 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     private long mStartPos = 0;
     private long mDownloadedBytes = 0;
     private long mTotalBytes = 0;
+    private int mTimeOut = 0;
     private DownloadResult mResult;
 
     public DownloadRequest(@NonNull String urlStr, @NonNull File file) {
@@ -83,6 +84,14 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
 
     protected void setTotalBytes(long totalBytes) {
         mTotalBytes = totalBytes;
+    }
+
+    public int getTimeOut() {
+        return mTimeOut;
+    }
+
+    public void setTimeOut(int timeOut) {
+        mTimeOut = timeOut;
     }
 
     /**
