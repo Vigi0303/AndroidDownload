@@ -30,8 +30,3 @@ error type
 
 
 	parse exception
-
-
-
-two question
-	how to handle time out with retry in DownloadWorker

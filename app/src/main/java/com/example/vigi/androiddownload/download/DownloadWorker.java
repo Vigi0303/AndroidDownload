@@ -1,7 +1,5 @@
 package com.example.vigi.androiddownload.download;
 
-import android.os.Process;
-
 import com.orhanobut.logger.Logger;
 
 import java.io.BufferedInputStream;
@@ -12,100 +10,79 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by Vigi on 2016/1/20.
  */
-public class DownloadWorker extends Thread {
+public class DownloadWorker {
+    private static final int SLEEP_INTERNAL = 500;
     private static final int STREAM_BUFFER = 1024;
-    private BlockingQueue<DownloadRequest> mRequestQueue;
     private NetWorkPerformer mNetWorkPerformer;
     private DownloadDelivery mDelivery;
-    private volatile boolean mQuit = false;   // TODO: 2016/1/24 why volatile
+    private DownloadRequest mDownloadRequest;
 
-    public DownloadWorker(BlockingQueue<DownloadRequest> requestQueue
-            , NetWorkPerformer netWorkPerformer, DownloadDelivery delivery) {
-        super("DownloadWorker");
-        mRequestQueue = requestQueue;
+    public DownloadWorker(NetWorkPerformer netWorkPerformer, DownloadDelivery delivery, DownloadRequest request) {
         mNetWorkPerformer = netWorkPerformer;
         mDelivery = delivery;
+        mDownloadRequest = request;
     }
 
-    @Override
-    public void run() {
-        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-        while (true) {
-            DownloadRequest downloadRequest = null;
-            try {
-                downloadRequest = mRequestQueue.take();
-            } catch (InterruptedException e) {
-                if (mQuit) {
-                    return;
-                }
-                continue;
+    public DownloadResult work() throws InterruptedException {
+        InputStream bis = null;
+        OutputStream bos = null;
+        NetWorkResponse response = null;
+        DownloadException error = null;
+
+        try {
+            response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest);
+            if (mDownloadRequest.isCancel()) {
+                return null;
             }
-            mDelivery.postDispatched(downloadRequest);
+            validateServerData(mDownloadRequest, response);
+            mDelivery.postTotalLength(mDownloadRequest, response.mTotalLength);
 
-            InputStream bis = null;
-            OutputStream bos = null;
-            NetWorkResponse response = null;
-            DownloadException error = null;
-
+            File targetFile = mDownloadRequest.getTargetFile();
+            bis = new BufferedInputStream(response.mContentStream);
+            // TODO: 2016/2/1 file io exception
+            bos = generateWriteStream(targetFile, response.mTotalLength, mDownloadRequest.getStartPos());
+            byte[] tmp = new byte[STREAM_BUFFER];
+            long downloadedBytes = 0;
+            int len;
+            // TODO: 2016/2/1 IOException
+            // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
+            while ((len = bis.read(tmp)) != -1) {
+                bos.write(tmp, 0, len);
+                downloadedBytes += len;
+                mDelivery.postLoading(mDownloadRequest, downloadedBytes);
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+                if (mDownloadRequest.isCancel()) {
+                    return null;
+                }
+            }
+        } catch (IOException e) {
+            Logger.e(e, "vigi");
+        } catch (Exception e) {
+            // unhandled exception
+            error = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
+        } finally {
+            if (response != null) {
+                response.disconnect();
+            }
             try {
-                response = mNetWorkPerformer.performDownloadRequest(downloadRequest);
-                if (downloadRequest.isCancel()) {
-                    continue;
+                if (bis != null) {
+                    bis.close();
                 }
-                validateServerData(downloadRequest, response);
-                mDelivery.postTotalLength(downloadRequest, response.mTotalLength);
-
-                File targetFile = downloadRequest.getTargetFile();
-                bis = new BufferedInputStream(response.mContentStream);
-                // TODO: 2016/2/1 file io exception
-                bos = generateWriteStream(targetFile, response.mTotalLength, downloadRequest.getStartPos());
-                byte[] tmp = new byte[STREAM_BUFFER];
-                long downloadedBytes = 0;
-                int len;
-                // TODO: 2016/2/1 IOException
-                // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
-                while ((len = bis.read(tmp)) != -1) {
-                    bos.write(tmp, 0, len);
-                    downloadedBytes += len;
-                    mDelivery.postLoading(downloadRequest, downloadedBytes);
-                    if (Thread.interrupted()) {
-                        return;
-                    }
-                    if (downloadRequest.isCancel()) {
-                        break;
-                    }
+                if (bos != null) {
+                    bos.flush();
+                    bos.close();
                 }
-            } catch (InterruptedException e) {
-                continue;
             } catch (IOException e) {
-                Logger.e(e, "vigi");
-            } catch (Exception e) {
-                // unhandled exception
-                error = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
-            } finally {
-                mDelivery.postFinish(downloadRequest, new DownloadResult(error));
-                downloadRequest.cancel();
-                if (response != null) {
-                    response.disconnect();
-                }
-                try {
-                    if (bis != null) {
-                        bis.close();
-                    }
-                    if (bos != null) {
-                        bos.flush();
-                        bos.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             }
         }
+        return new DownloadResult(error);
     }
 
     private OutputStream generateWriteStream(File file, long fileLength, long startPos) throws IOException {
@@ -125,10 +102,5 @@ public class DownloadWorker extends Thread {
         if (response.mContentLength == 0 || response.mTotalLength == 0) {
             throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE, "url(" + request.getOriginalUrl() + ") does not return content length");
         }
-    }
-
-    public void quit() {
-        mQuit = true;
-        interrupt();
     }
 }
