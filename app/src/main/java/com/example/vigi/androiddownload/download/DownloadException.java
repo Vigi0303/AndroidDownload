@@ -32,7 +32,9 @@ public class DownloadException extends Exception {
     public boolean isBadNetwork() {
         return mExceptionCode == UNKNOWN_HOST
                 || mExceptionCode == NO_CONNECTION
-                || mExceptionCode == UNKNOWN_NETWORK;
+                || mExceptionCode == SOCKET_TIMEOUT
+//                || mExceptionCode == UNKNOWN_NETWORK     // TODO: 2016/2/3 to collect kinds of exception
+                ;
     }
 
     public static final int EXCEPTION_CODE_PARSE = 101;
@@ -48,6 +50,11 @@ public class DownloadException extends Exception {
     public static final int LOCAL_IO = 104;
 
     public static final int BAD_URL = 105;
+
+    /**
+     * a substitute of {@link java.net.SocketTimeoutException}
+     */
+    public static final int SOCKET_TIMEOUT = 106;
 
     public static final int UNKNOWN_NETWORK = 500;
 

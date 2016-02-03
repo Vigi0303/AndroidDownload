@@ -1,6 +1,7 @@
 package com.example.vigi.androiddownload.download;
 
 import android.os.SystemClock;
+import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -31,13 +32,16 @@ public class DownloadWorker {
     public DownloadResult work() throws InterruptedException {
         long startTimeMs = SystemClock.elapsedRealtime();
         long downloadedBytes = 0;
+        long timeMsRecord = startTimeMs;
         while (true) {
             InputStream bis = null;
             CustomOutputStream bos = null;
             NetWorkResponse response = null;
             DownloadException error = null;
             try {
+                Log.e("vigi", "I am performing~");
                 response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest, mDownloadRequest.getStartPos() + downloadedBytes);
+                timeMsRecord = SystemClock.elapsedRealtime();
                 if (mDownloadRequest.isCancel()) {
                     return null;
                 }
@@ -62,9 +66,11 @@ public class DownloadWorker {
                     bos.customWrite(bytesTmp, 0, bytesLen);
                     downloadedBytes += bytesLen;
                     currTime = SystemClock.elapsedRealtime();
+                    timeMsRecord = currTime;
                     if (currTime - lastTimeMs >= mDownloadRequest.getRate()) {
                         lastTimeMs = currTime;
                         mDelivery.postLoading(mDownloadRequest, downloadedBytes);
+                        Log.e("vigi", "I receive " + bytesLen + " and downloaded " + downloadedBytes + " :)");
                     }
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
@@ -73,6 +79,7 @@ public class DownloadWorker {
                         return null;
                     }
                 }
+                Log.e("vigi", "I read finish. bytesLen=" + bytesLen + " and total size=" + downloadedBytes);
             } catch (InterruptedException e) {
                 throw e;
             } catch (Exception e) {
@@ -90,9 +97,15 @@ public class DownloadWorker {
                 }
 
                 if (error.isBadNetwork()) {
-                    // TODO: 2016/2/2 timeout handle
-                    Thread.sleep(SLEEP_INTERNAL_MS);       // I need have a rest
-                    continue;
+                    int waitMs = (int) (SystemClock.elapsedRealtime() - timeMsRecord);
+                    if (waitMs <= mDownloadRequest.getTimeOut()) {
+                        Log.e("vigi", "wait for network: " + waitMs + "ms");
+                        Thread.sleep(SLEEP_INTERNAL_MS);       // I need have a rest
+                        continue;
+                    }
+                    Log.e("vigi", "I give up ... for wait " + waitMs + "ms");
+                } else {
+                    Log.e("vigi", "some one kill me!!", e);
                 }
             } finally {
                 if (response != null) {

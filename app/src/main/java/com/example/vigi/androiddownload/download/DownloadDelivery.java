@@ -50,30 +50,30 @@ public class DownloadDelivery {
             switch (msg.what) {
                 case MSG_DISPATCHED: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onDispatched");
+                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onDispatched");
                     request.onDispatched();
                     break;
                 }
                 case MSG_FINISH: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onFinish");
+                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onFinish");
                     request.onFinish(request.getResult());
                     break;
                 }
                 case MSG_LOADING: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-//                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onLoading(" + request.getCurrentBytes() + ")");
+//                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onLoading(" + request.getCurrentBytes() + ")");
                     request.onLoading(request.getCurrentBytes());
                     break;
                 }
                 case MSG_READ_LENGTH: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.d("debug", "request(" + request.getOriginalUrl() + ")onReadLength");
+                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onReadLength(" + request.getTotalBytes() + ")");
                     request.onReadLength(request.getTotalBytes());
                     break;
                 }
                 default:
-                    Log.w("warn", "unknown msg to deliver");
+                    Log.w("vigi", "unknown msg to deliver");
             }
         }
     }

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
@@ -114,6 +115,9 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                 }
                 if (e instanceof SocketException) {
                     throw new DownloadException(DownloadException.NO_CONNECTION, e);
+                }
+                if (e instanceof SocketTimeoutException) {
+                    throw new DownloadException(DownloadException.SOCKET_TIMEOUT, e);
                 }
                 throw new DownloadException(DownloadException.UNKNOWN_NETWORK, e);
             }

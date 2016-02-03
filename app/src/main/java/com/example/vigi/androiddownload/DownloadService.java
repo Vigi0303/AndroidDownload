@@ -57,6 +57,7 @@ public class DownloadService extends Service {
                 String guessName = url.substring(url.lastIndexOf("/") + 1, guessEnd == -1 ? url.length() : guessEnd);
                 File file = new File(getExternalFilesDir("download"), guessName);
                 DownloadRequest downloadRequest = new DownloadRequest(url, file);
+                downloadRequest.setTimeOut(10000);  // 10s to debug
                 mDownloadManager.addDownload(downloadRequest);
                 return START_STICKY;
             case ACTION_STOP_ALL:
