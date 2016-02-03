@@ -31,7 +31,7 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
     }
 
     @Override
-    public UrlConnectionResponse performDownloadRequest(DownloadRequest request)
+    public UrlConnectionResponse performDownloadRequest(DownloadRequest request, long range)
             throws MalformedURLException, DownloadException {
         while (true) {
             if (request.isCancel()) {
@@ -55,8 +55,8 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("User-Agent", mUserAgent);
                 connection.setRequestProperty("connection", "close");
-                if (request.getStartPos() != 0) {
-                    connection.setRequestProperty("Range", "bytes=" + request.getStartPos() + "-");
+                if (range != 0) {
+                    connection.setRequestProperty("Range", "bytes=" + range + "-");
                 }
                 connection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
                 connection.setReadTimeout(DEFAULT_TIMEOUT_MS);
@@ -87,27 +87,24 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                         isAcceptRange = false;
                     }
                 }
-                if (!isAcceptRange) {
-                    request.setStartPos(0);
-                }
                 // parse content length
                 String lengthStr = connection.getHeaderField("Content-Length");
                 if (TextUtils.isEmpty(lengthStr)) {
-                    hcr.mContentLength = 0;
+                    hcr.contentLength = 0;
                 } else {
-                    hcr.mContentLength = Long.parseLong(lengthStr);
+                    hcr.contentLength = Long.parseLong(lengthStr);
                 }
-                hcr.mTotalLength = hcr.mContentLength;
+                hcr.totalLength = hcr.contentLength;
                 if (isAcceptRange) {
                     lengthStr = connection.getHeaderField("Content-Range");
                     if (!TextUtils.isEmpty(lengthStr)) {
-                        hcr.mTotalLength = Long.parseLong(lengthStr.substring(lengthStr.lastIndexOf("/") + 1, lengthStr.length()));
+                        hcr.totalLength = Long.parseLong(lengthStr.substring(lengthStr.lastIndexOf("/") + 1, lengthStr.length()));
                     }
-                    hcr.mSupportRange = true;
+                    hcr.supportRange = true;
                 }
                 // TODO: 2016/2/1 IOException - if no InputStream could be created.
                 // not appear even though no network
-                hcr.mContentStream = connection.getInputStream();
+                hcr.contentStream = connection.getInputStream();
                 return hcr;
             } catch (MalformedURLException e) {
                 throw e;

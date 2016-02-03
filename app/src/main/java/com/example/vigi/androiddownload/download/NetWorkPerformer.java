@@ -9,6 +9,6 @@ import java.net.MalformedURLException;
 public interface NetWorkPerformer<T extends NetWorkResponse> {
     public static final int DEFAULT_TIMEOUT_MS = 5000;
 
-    public T performDownloadRequest(DownloadRequest request)
+    public T performDownloadRequest(DownloadRequest request, long range)
             throws MalformedURLException, DownloadException;
 }

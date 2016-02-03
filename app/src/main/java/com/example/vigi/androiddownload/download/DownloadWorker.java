@@ -1,5 +1,7 @@
 package com.example.vigi.androiddownload.download;
 
+import android.os.SystemClock;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -28,32 +30,41 @@ public class DownloadWorker {
     }
 
     public DownloadResult work() throws InterruptedException {
+        long startTimeMs = SystemClock.elapsedRealtime();
+        long downloadedBytes = 0;
         while (true) {
             InputStream bis = null;
             CustomOutputStream bos = null;
             NetWorkResponse response = null;
             DownloadException error = null;
             try {
-                response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest);
+                response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest, mDownloadRequest.getStartPos() + downloadedBytes);
                 if (mDownloadRequest.isCancel()) {
                     return null;
                 }
                 validateServerData(mDownloadRequest, response);
-                mDelivery.postTotalLength(mDownloadRequest, response.mTotalLength);
+                if (!response.supportRange) {
+                    mDownloadRequest.setStartPos(0);
+                    downloadedBytes = 0;
+                }
+                mDelivery.postTotalLength(mDownloadRequest, response.totalLength);
 
                 File targetFile = mDownloadRequest.getTargetFile();
-                bis = new BufferedInputStream(response.mContentStream);
+                bis = new BufferedInputStream(response.contentStream);
                 // TODO: 2016/2/1 file io exception
-                bos = new CustomOutputStream(generateWriteStream(targetFile, response.mTotalLength, mDownloadRequest.getStartPos()));
+                bos = new CustomOutputStream(generateWriteStream(targetFile, response.totalLength, mDownloadRequest.getStartPos()));
                 byte[] tmp = new byte[STREAM_BUFFER];
-                long downloadedBytes = 0;
-                int len;
+                int len; long lastTimeMs = 0; long currTime;
                 // TODO: 2016/2/1 IOException
                 // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
                 while ((len = bis.read(tmp)) != -1) {
                     bos.customWrite(tmp, 0, len);
                     downloadedBytes += len;
-                    mDelivery.postLoading(mDownloadRequest, downloadedBytes);
+                    currTime = SystemClock.elapsedRealtime();
+                    if (currTime - lastTimeMs >= mDownloadRequest.getRate()) {
+                        lastTimeMs = currTime;
+                        mDelivery.postLoading(mDownloadRequest, downloadedBytes);
+                    }
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
                     }
@@ -82,8 +93,6 @@ public class DownloadWorker {
                 if (error.getExceptionCode() == DownloadException.UNKNOWN_HOST
                         || (error.getExceptionCode() == DownloadException.NO_CONNECTION)) {
                     // TODO: 2016/2/2 timeout handle
-                    mDownloadRequest.setStartPos(mDownloadRequest.getCurrentBytes());
-                    mDownloadRequest.setDownloadedBytes(0);
                     Thread.sleep(SLEEP_INTERNAL_MS);       // I need have a rest
                     continue;
                 }
@@ -123,9 +132,9 @@ public class DownloadWorker {
         }
     }
 
-    protected void validateServerData(DownloadRequest request, NetWorkResponse response) throws DownloadException {
+    private void validateServerData(DownloadRequest request, NetWorkResponse response) throws DownloadException {
         // TODO: 2016/1/26 and do not support 0 length download
-        if (response.mContentLength == 0 || response.mTotalLength == 0) {
+        if (response.contentLength == 0 || response.totalLength == 0) {
             throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE, "url(" + request.getOriginalUrl() + ") does not return content length");
         }
     }

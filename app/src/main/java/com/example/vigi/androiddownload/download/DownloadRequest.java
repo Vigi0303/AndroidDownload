@@ -9,6 +9,7 @@ import java.io.File;
  * Created by Vigi on 2016/1/27.
  */
 public class DownloadRequest implements Comparable<DownloadRequest> {
+    private static final int DEFAULT_RATE_MS = 1000;
     private int mSequence = 0;
     private String mOriginalUrl;
     private String mRedirectUrl;
@@ -18,6 +19,7 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     private long mDownloadedBytes = 0;
     private long mTotalBytes = 0;
     private int mTimeOut = 0;
+    private int mRate = DEFAULT_RATE_MS;
     private DownloadResult mResult;
 
     public DownloadRequest(@NonNull String urlStr, @NonNull File file) {
@@ -92,6 +94,14 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
 
     public void setTimeOut(int timeOut) {
         mTimeOut = timeOut;
+    }
+
+    public int getRate() {
+        return mRate;
+    }
+
+    public void setRate(int rate) {
+        mRate = rate;
     }
 
     /**
