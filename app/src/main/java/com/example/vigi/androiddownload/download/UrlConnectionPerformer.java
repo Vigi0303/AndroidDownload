@@ -40,18 +40,12 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
 
             try {
                 String urlStr = request.getUrl();
-                // TODO: 2016/2/1 MalformedURLException - if spec could not be parsed as a URL.
                 URL url = new URL(urlStr);
-                // TODO: 2016/2/1 IOException - if an error occurs while opening the connection.
-                // not appear even though no network
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                // TODO  may throw IllegalStateException when connection is connected that we can't handle
                 connection.setDoInput(true);
                 if ("https".equals(url.getProtocol()) && mSslSocketFactory != null) {
                     ((HttpsURLConnection) connection).setSSLSocketFactory(mSslSocketFactory);
                 }
-                // TODO: 2016/2/1 ProtocolException - if this is called after connected, or the method is not supported by this HTTP implementation.
-                // we call setDoInput() above since it will not block
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("User-Agent", mUserAgent);
                 connection.setRequestProperty("connection", "close");
@@ -60,20 +54,15 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                 }
                 connection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
                 connection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                // TODO: 2016/2/1 IOException - if an error occurs while connecting to the resource.
-                // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
                 connection.connect();
 
                 UrlConnectionResponse hcr = new UrlConnectionResponse(connection);
-                // TODO: 2016/2/1 IOException - if there is an IO error during the retrieval.
-                // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
                 int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
                     request.setRedirectUrl(connection.getHeaderField("Location"));
                     continue;
                 }
                 if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {
-                    // TODO: 2016/2/1 custom exception : illegal status code
                     throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE
                             , "url(" + request.getOriginalUrl() + ") return error statusCode(" + responseCode + ")");
                 }
@@ -102,8 +91,6 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                     }
                     hcr.supportRange = true;
                 }
-                // TODO: 2016/2/1 IOException - if no InputStream could be created.
-                // not appear even though no network
                 hcr.contentStream = connection.getInputStream();
                 return hcr;
             } catch (IOException e) {

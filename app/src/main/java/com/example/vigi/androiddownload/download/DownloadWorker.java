@@ -54,14 +54,11 @@ public class DownloadWorker {
 
                 File targetFile = mDownloadRequest.getTargetFile();
                 bis = new BufferedInputStream(response.contentStream);
-                // TODO: 2016/2/1 file io exception
                 bos = new CustomOutputStream(generateWriteStream(targetFile, response.totalLength, mDownloadRequest.getStartPos()));
                 byte[] bytesTmp = new byte[STREAM_BUFFER];
                 int bytesLen;
                 long lastTimeMs = 0;
                 long currTime;
-                // TODO: 2016/2/1 IOException
-                // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
                 while ((bytesLen = bis.read(bytesTmp)) != -1) {
                     bos.customWrite(bytesTmp, 0, bytesLen);
                     downloadedBytes += bytesLen;
