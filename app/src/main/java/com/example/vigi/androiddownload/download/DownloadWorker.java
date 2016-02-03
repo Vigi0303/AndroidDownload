@@ -15,7 +15,7 @@ import java.net.SocketException;
  * Created by Vigi on 2016/1/20.
  */
 public class DownloadWorker {
-    private static final int SLEEP_INTERNAL_MS = 500;
+    private static final int SLEEP_INTERNAL_MS = 1000;
     private static final int STREAM_BUFFER = 1024;
     private NetWorkPerformer mNetWorkPerformer;
     private DownloadDelivery mDelivery;
@@ -83,6 +83,7 @@ public class DownloadWorker {
                         || (error.getExceptionCode() == DownloadException.EXCEPTION_CODE_NO_CONNECTION)) {
                     // TODO: 2016/2/2 timeout handle
                     mDownloadRequest.setStartPos(mDownloadRequest.getCurrentBytes());
+                    mDownloadRequest.setDownloadedBytes(0);
                     Thread.sleep(SLEEP_INTERNAL_MS);       // I need have a rest
                     continue;
                 }
