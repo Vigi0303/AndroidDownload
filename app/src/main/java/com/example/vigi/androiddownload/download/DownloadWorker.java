@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.net.MalformedURLException;
 import java.net.SocketException;
 
 /**
@@ -53,13 +52,15 @@ public class DownloadWorker {
                 bis = new BufferedInputStream(response.contentStream);
                 // TODO: 2016/2/1 file io exception
                 bos = new CustomOutputStream(generateWriteStream(targetFile, response.totalLength, mDownloadRequest.getStartPos()));
-                byte[] tmp = new byte[STREAM_BUFFER];
-                int len; long lastTimeMs = 0; long currTime;
+                byte[] bytesTmp = new byte[STREAM_BUFFER];
+                int bytesLen;
+                long lastTimeMs = 0;
+                long currTime;
                 // TODO: 2016/2/1 IOException
                 // TODO: 2016/2/1 may throw lots kind of exception when bad or no network
-                while ((len = bis.read(tmp)) != -1) {
-                    bos.customWrite(tmp, 0, len);
-                    downloadedBytes += len;
+                while ((bytesLen = bis.read(bytesTmp)) != -1) {
+                    bos.customWrite(bytesTmp, 0, bytesLen);
+                    downloadedBytes += bytesLen;
                     currTime = SystemClock.elapsedRealtime();
                     if (currTime - lastTimeMs >= mDownloadRequest.getRate()) {
                         lastTimeMs = currTime;
@@ -76,9 +77,7 @@ public class DownloadWorker {
                 throw e;
             } catch (Exception e) {
                 if (e instanceof IOException) {
-                    if (e instanceof MalformedURLException) {
-                        error = new DownloadException(DownloadException.BAD_URL, e);
-                    } else if (e instanceof SocketException) {
+                    if (e instanceof SocketException) {
                         error = new DownloadException(DownloadException.NO_CONNECTION, e);
                     } else {
                         error = new DownloadException(DownloadException.UNKNOWN, e);
@@ -90,8 +89,7 @@ public class DownloadWorker {
                     error = new DownloadException(DownloadException.UNKNOWN, e);
                 }
 
-                if (error.getExceptionCode() == DownloadException.UNKNOWN_HOST
-                        || (error.getExceptionCode() == DownloadException.NO_CONNECTION)) {
+                if (error.isBadNetwork()) {
                     // TODO: 2016/2/2 timeout handle
                     Thread.sleep(SLEEP_INTERNAL_MS);       // I need have a rest
                     continue;

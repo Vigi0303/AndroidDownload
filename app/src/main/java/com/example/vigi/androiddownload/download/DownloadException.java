@@ -29,6 +29,12 @@ public class DownloadException extends Exception {
         return mExceptionCode;
     }
 
+    public boolean isBadNetwork() {
+        return mExceptionCode == UNKNOWN_HOST
+                || mExceptionCode == NO_CONNECTION
+                || mExceptionCode == UNKNOWN_NETWORK;
+    }
+
     public static final int EXCEPTION_CODE_PARSE = 101;
 
     /**
@@ -42,6 +48,8 @@ public class DownloadException extends Exception {
     public static final int LOCAL_IO = 104;
 
     public static final int BAD_URL = 105;
+
+    public static final int UNKNOWN_NETWORK = 500;
 
     /**
      * include all unexpected exceptions and we should specific it when it comes out

@@ -31,8 +31,7 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
     }
 
     @Override
-    public UrlConnectionResponse performDownloadRequest(DownloadRequest request, long range)
-            throws MalformedURLException, DownloadException {
+    public UrlConnectionResponse performDownloadRequest(DownloadRequest request, long range) throws DownloadException {
         while (true) {
             if (request.isCancel()) {
                 return null;
@@ -106,17 +105,17 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                 // not appear even though no network
                 hcr.contentStream = connection.getInputStream();
                 return hcr;
-            } catch (MalformedURLException e) {
-                throw e;
             } catch (IOException e) {
-                // TODO: 2016/2/1 time out handle this
+                if (e instanceof MalformedURLException) {
+                    throw new DownloadException(DownloadException.BAD_URL, e);
+                }
                 if (e instanceof UnknownHostException) {
                     throw new DownloadException(DownloadException.UNKNOWN_HOST, e);
                 }
                 if (e instanceof SocketException) {
                     throw new DownloadException(DownloadException.NO_CONNECTION, e);
                 }
-                throw new DownloadException(DownloadException.UNKNOWN, e);
+                throw new DownloadException(DownloadException.UNKNOWN_NETWORK, e);
             }
         }
     }
