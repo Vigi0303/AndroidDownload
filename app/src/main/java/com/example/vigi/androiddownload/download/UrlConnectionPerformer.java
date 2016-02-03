@@ -114,12 +114,12 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
             } catch (IOException e) {
                 // TODO: 2016/2/1 time out handle this
                 if (e instanceof UnknownHostException) {
-                    throw new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN_HOST, e);
+                    throw new DownloadException(DownloadException.UNKNOWN_HOST, e);
                 }
                 if (e instanceof SocketException) {
-                    throw new DownloadException(DownloadException.EXCEPTION_CODE_NO_CONNECTION, e);
+                    throw new DownloadException(DownloadException.NO_CONNECTION, e);
                 }
-                throw new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
+                throw new DownloadException(DownloadException.UNKNOWN, e);
             }
         }
     }

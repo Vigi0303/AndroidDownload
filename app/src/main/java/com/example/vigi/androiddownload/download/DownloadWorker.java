@@ -66,21 +66,21 @@ public class DownloadWorker {
             } catch (Exception e) {
                 if (e instanceof IOException) {
                     if (e instanceof MalformedURLException) {
-                        error = new DownloadException(DownloadException.EXCEPTION_CODE_BAD_URL, e);
+                        error = new DownloadException(DownloadException.BAD_URL, e);
                     } else if (e instanceof SocketException) {
-                        error = new DownloadException(DownloadException.EXCEPTION_CODE_NO_CONNECTION, e);
+                        error = new DownloadException(DownloadException.NO_CONNECTION, e);
                     } else {
-                        error = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
+                        error = new DownloadException(DownloadException.UNKNOWN, e);
                     }
                 } else if (e instanceof DownloadException) {
                     error = (DownloadException) e;
                 } else {
                     // unhandled exception
-                    error = new DownloadException(DownloadException.EXCEPTION_CODE_UNKNOWN, e);
+                    error = new DownloadException(DownloadException.UNKNOWN, e);
                 }
 
-                if (error.getExceptionCode() == DownloadException.EXCEPTION_CODE_UNKNOWN_HOST
-                        || (error.getExceptionCode() == DownloadException.EXCEPTION_CODE_NO_CONNECTION)) {
+                if (error.getExceptionCode() == DownloadException.UNKNOWN_HOST
+                        || (error.getExceptionCode() == DownloadException.NO_CONNECTION)) {
                     // TODO: 2016/2/2 timeout handle
                     mDownloadRequest.setStartPos(mDownloadRequest.getCurrentBytes());
                     mDownloadRequest.setDownloadedBytes(0);
@@ -119,7 +119,7 @@ public class DownloadWorker {
             raf.seek(startPos);
             return new BufferedOutputStream(new FileOutputStream(raf.getFD()));
         } catch (IOException e) {
-            throw new DownloadException(DownloadException.EXCEPTION_CODE_LOCAL_IO, e);
+            throw new DownloadException(DownloadException.LOCAL_IO, e);
         }
     }
 
@@ -140,7 +140,7 @@ public class DownloadWorker {
             try {
                 super.write(buffer, offset, length);
             } catch (IOException e) {
-                throw new DownloadException(DownloadException.EXCEPTION_CODE_LOCAL_IO, e);
+                throw new DownloadException(DownloadException.LOCAL_IO, e);
             }
         }
     }

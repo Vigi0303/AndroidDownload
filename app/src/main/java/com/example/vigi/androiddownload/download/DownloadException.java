@@ -35,17 +35,17 @@ public class DownloadException extends Exception {
      * a substitute of {@link java.net.UnknownHostException}
      * <p>Also it might has no network</p>
      */
-    public static final int EXCEPTION_CODE_UNKNOWN_HOST = 102;
+    public static final int UNKNOWN_HOST = 102;
 
-    public static final int EXCEPTION_CODE_NO_CONNECTION = 103;
+    public static final int NO_CONNECTION = 103;
 
-    public static final int EXCEPTION_CODE_LOCAL_IO = 104;
+    public static final int LOCAL_IO = 104;
 
-    public static final int EXCEPTION_CODE_BAD_URL = 105;
+    public static final int BAD_URL = 105;
 
     /**
      * include all unexpected exceptions and we should specific it when it comes out
      */
-    public static final int EXCEPTION_CODE_UNKNOWN = 999;
+    public static final int UNKNOWN = 999;
 
 }
