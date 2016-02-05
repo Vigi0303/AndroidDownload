@@ -14,11 +14,16 @@ public class DownloadDelivery {
     private static final int MSG_LOADING = 3;
     private static final int MSG_READ_LENGTH = 4;
     private static final int MSG_CANCELED = 5;
+    private static final int MSG_CREATE = 6;
 
     protected Handler mHandler;
 
     public DownloadDelivery(Looper looper) {
         mHandler = new DeliveryHandler(looper == null ? Looper.getMainLooper() : looper);
+    }
+
+    public void postCreate(DownloadRequest request) {
+        mHandler.obtainMessage(MSG_CREATE, request).sendToTarget();
     }
 
     public void postDispatched(DownloadRequest request) {
@@ -53,6 +58,12 @@ public class DownloadDelivery {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
+                case MSG_CREATE: {
+                    DownloadRequest request = (DownloadRequest) msg.obj;
+                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onCreate");
+                    request.onCreate();
+                    break;
+                }
                 case MSG_DISPATCHED: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
                     Log.e("vigi", "request(" + request.getOriginalUrl() + ")onDispatched");
@@ -81,6 +92,7 @@ public class DownloadDelivery {
                     DownloadRequest request = (DownloadRequest) msg.obj;
                     Log.e("vigi", "request(" + request.getOriginalUrl() + ")onCanceled");
                     request.onCanceled();
+                    break;
                 }
                 default:
                     Log.w("vigi", "unknown msg to deliver");

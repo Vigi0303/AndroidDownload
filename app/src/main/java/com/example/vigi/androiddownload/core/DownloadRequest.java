@@ -122,6 +122,10 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
         return this.mSequence - another.mSequence;
     }
 
+    protected void onCreate() {
+
+    }
+
     protected void onDispatched() {
 
     }

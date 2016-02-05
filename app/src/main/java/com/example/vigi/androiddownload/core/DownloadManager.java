@@ -36,6 +36,7 @@ public class DownloadManager {
     }
 
     public void addDownload(DownloadRequest downloadRequest) {
+        mDelivery.postCreate(downloadRequest);
         if (mDispatcher == null) {
             start();
         }
