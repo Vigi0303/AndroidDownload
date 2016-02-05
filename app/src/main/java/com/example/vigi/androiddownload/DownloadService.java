@@ -98,15 +98,25 @@ public class DownloadService extends Service {
         String guessName = url.substring(url.lastIndexOf("/") + 1, guessEnd == -1 ? url.length() : guessEnd);
         String hashStr = String.valueOf(url.hashCode());
         File file = new File(getExternalFilesDir("download/" + hashStr), guessName);
-        DownloadRequest downloadRequest = new DownloadRequestImpl(url, file, watchInfoFile(file));
+        DownloadRequest downloadRequest = new DownloadRequestImpl(url, file, lookupInfoFile(file));
         downloadRequest.setTimeOut(10000);  // 10s to debug
         mDownloadManager.addDownload(downloadRequest);
     }
 
-    private long watchInfoFile(File targetFile) {
+    private long lookupInfoFile(File targetFile) {
         // continue from last position if we have
         File infoJsonFile = new File(targetFile.getParent(), "info.json");
         long downloadedSize = 0;
+        DownloadTask task = generateBean(infoJsonFile);
+        if (task != null && targetFile.exists()) {
+            if (task.totalSize == targetFile.length()) {
+                downloadedSize = task.downloadedSize;
+            }
+        }
+        return downloadedSize;
+    }
+
+    private DownloadTask generateBean(File infoJsonFile) {
         if (infoJsonFile.exists()) {
             FileReader reader = null;
             try {
@@ -117,19 +127,14 @@ public class DownloadService extends Service {
                 while ((len = reader.read(buffer)) != -1) {
                     sb.append(buffer, 0, len);
                 }
-                DownloadTask task = JSON.parseObject(sb.toString(), DownloadTask.class);
-                if (task != null && targetFile.exists()) {
-                    if (task.totalSize == targetFile.length()) {
-                        downloadedSize = task.downloadedSize;
-                    }
-                }
+                return JSON.parseObject(sb.toString(), DownloadTask.class);
             } catch (java.io.IOException e) {
                 Log.e("vigi", "read failed", e);
             } finally {
                 IOUtils.close(reader);
             }
         }
-        return downloadedSize;
+        return null;
     }
 
     private void postEventOnMainThread(Object event) {
@@ -151,12 +156,28 @@ public class DownloadService extends Service {
         protected void onCreate() {
             File targetFile = getTargetFile();
             File infoJsonFile = new File(targetFile.getParent(), "info.json");
+            DownloadTask task = generateBean(infoJsonFile);
+            if (task == null) {
+                task = new DownloadTask();
+                task.url = getOriginalUrl();
+                task.downloadedSize = getCurrentBytes();
+                task.status = DownloadTask.WAIT;
+                task.createTime = System.currentTimeMillis();
+                task.title = task.url;
+            }
 
-            //
+            syncTaskWriter(task);
+        }
+
+        private boolean syncTaskWriter(DownloadTask task) {
+            File targetFile = getTargetFile();
+            File infoJsonFile = new File(targetFile.getParent(), "info.json");
             FileWriter writer = null;
             try {
                 writer = new FileWriter(infoJsonFile, false);
+                writer.write(JSON.toJSONString(task));
             } catch (IOException e) {
+                cancel();
                 Log.e("vigi", "write failed", e);
             } finally {
                 IOUtils.close(writer);

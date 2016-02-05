@@ -11,6 +11,10 @@ public class DownloadTask {
     public static final int FINISH = 4;
     public static final int PROCESSING = 5;   // disable status to keep it atomic
 
+    public DownloadTask() {
+        status = WAIT;
+    }
+
     public String url;
     public String title;
     public long totalSize;
