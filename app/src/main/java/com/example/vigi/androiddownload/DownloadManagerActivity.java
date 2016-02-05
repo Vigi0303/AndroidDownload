@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.squareup.otto.Subscribe;
+
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
@@ -32,6 +34,44 @@ public class DownloadManagerActivity extends Activity {
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.setAdapter(mListAdapter);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        EventBus.getInstance().register(this);
+    }
+
+    @Override
+    protected void onPause() {
+        EventBus.getInstance().unregister(this);
+        super.onPause();
+    }
+
+    @Subscribe
+    public void onDisPatchedEvent(DownloadEvent.DisPatched event) {
+
+    }
+
+    @Subscribe
+    public void onReadLengthEvent(DownloadEvent.ReadLength event) {
+
+    }
+
+    @Subscribe
+    public void onLoadingEvent(DownloadEvent.Loading event) {
+
+    }
+
+    @Subscribe
+    public void onFinishEvent(DownloadEvent.Finish event) {
+
+    }
+
+    @Subscribe
+    public void onCanceledEvent(DownloadEvent.Canceled event) {
+
+    }
+
 
     class DownloadListAdapter extends RecyclerView.Adapter<DownloadItemHolder> {
         @Override
