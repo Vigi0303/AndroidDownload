@@ -33,6 +33,7 @@ public class DownloadWorker {
         long startTimeMs = SystemClock.elapsedRealtime();
         long downloadedBytes = 0;
         long timeMsRecord = startTimeMs;
+        int retryCount = 0;
         while (true) {
             InputStream bis = null;
             CustomOutputStream bos = null;
@@ -98,6 +99,7 @@ public class DownloadWorker {
                     if (waitMs <= mDownloadRequest.getTimeOut()) {
                         Log.e("vigi", "wait for network: " + waitMs + "ms");
                         Thread.sleep(SLEEP_INTERNAL_MS);       // I need have a rest
+                        retryCount += 1;
                         continue;
                     }
                     Log.e("vigi", "I give up ... for wait " + waitMs + "ms");

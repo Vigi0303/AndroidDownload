@@ -52,8 +52,9 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                 if (range != 0) {
                     connection.setRequestProperty("Range", "bytes=" + range + "-");
                 }
-                connection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
-                connection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+                int timeoutMs = request.getTimeOut() == 0 ? DEFAULT_TIMEOUT_MS : request.getTimeOut();
+                connection.setConnectTimeout(timeoutMs);
+                connection.setReadTimeout(timeoutMs);
                 connection.connect();
 
                 UrlConnectionResponse hcr = new UrlConnectionResponse(connection);
