@@ -136,4 +136,8 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     protected void onLoading(long downloadedBytes) {
 
     }
+
+    protected void onCanceled() {
+
+    }
 }

@@ -31,7 +31,8 @@ public class DownloadDispatcher extends Thread {
                 mDelivery.postDispatched(downloadRequest);
                 DownloadWorker worker = new DownloadWorker(mNetWorkPerformer, mDelivery, downloadRequest);
                 DownloadResult result = worker.work();
-                if (downloadRequest.isCancel() || result == null) {
+                if (downloadRequest.isCancel()) {
+                    mDelivery.postCanceled(downloadRequest);
                     continue;
                 }
                 mDelivery.postFinish(downloadRequest, result);

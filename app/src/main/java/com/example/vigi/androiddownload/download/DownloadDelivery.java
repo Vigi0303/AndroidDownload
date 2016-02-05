@@ -13,6 +13,7 @@ public class DownloadDelivery {
     private static final int MSG_FINISH = 2;
     private static final int MSG_LOADING = 3;
     private static final int MSG_READ_LENGTH = 4;
+    private static final int MSG_CANCELED = 5;
 
     protected Handler mHandler;
 
@@ -37,6 +38,10 @@ public class DownloadDelivery {
     public void postTotalLength(DownloadRequest request, long totalBytes) {
         request.setTotalBytes(totalBytes);
         mHandler.obtainMessage(MSG_READ_LENGTH, request).sendToTarget();
+    }
+
+    public void postCanceled(DownloadRequest request) {
+        mHandler.obtainMessage(MSG_CANCELED, request).sendToTarget();
     }
 
     class DeliveryHandler extends Handler {
@@ -71,6 +76,11 @@ public class DownloadDelivery {
                     Log.e("vigi", "request(" + request.getOriginalUrl() + ")onReadLength(" + request.getTotalBytes() + ")");
                     request.onReadLength(request.getTotalBytes());
                     break;
+                }
+                case MSG_CANCELED: {
+                    DownloadRequest request = (DownloadRequest) msg.obj;
+                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onCanceled");
+                    request.onCanceled();
                 }
                 default:
                     Log.w("vigi", "unknown msg to deliver");
