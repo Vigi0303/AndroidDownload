@@ -126,6 +126,10 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
 
     }
 
+    /**
+     * call back when server return "Content-Length" in time.
+     * <p>You can also get it by {@link #getTotalBytes()} later</p>
+     */
     protected void onReadLength(long totalBytes) {
 
     }
