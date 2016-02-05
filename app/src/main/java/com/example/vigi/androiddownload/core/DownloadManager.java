@@ -2,6 +2,7 @@ package com.example.vigi.androiddownload.core;
 
 import android.os.Looper;
 
+import java.net.HttpURLConnection;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +22,11 @@ public class DownloadManager {
         this(null, null);
     }
 
+    /**
+     * @param netWorkPerformer perform network, default by {@link HttpURLConnection}
+     * @param delivery         delivery {@link DownloadRequest#onLoading(long)}, {@link DownloadRequest#onFinish(DownloadResult)} and etc.
+     *                         you can assign a {@link Looper} to {@link DownloadDelivery}
+     */
     public DownloadManager(UrlConnectionPerformer netWorkPerformer, DownloadDelivery delivery) {
         if (netWorkPerformer == null) {
             mNetWorkPerformer = new UrlConnectionPerformer(DEFAULT_USER_AGENT);

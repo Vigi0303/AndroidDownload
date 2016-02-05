@@ -119,7 +119,7 @@ public class DownloadWorker {
                         bos.close();
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.e("vigi", "unknown error", e);
                 }
             }
             return new DownloadResult(error);
