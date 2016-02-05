@@ -1,4 +1,4 @@
-package com.example.vigi.androiddownload.download;
+package com.example.vigi.androiddownload.core;
 
 import android.support.annotation.NonNull;
 import android.text.TextUtils;

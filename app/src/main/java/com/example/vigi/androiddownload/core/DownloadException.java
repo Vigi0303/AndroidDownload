@@ -1,4 +1,4 @@
-package com.example.vigi.androiddownload.download;
+package com.example.vigi.androiddownload.core;
 
 /**
  * Created by Vigi on 2016/1/20.

@@ -7,8 +7,8 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.example.vigi.androiddownload.download.DownloadManager;
-import com.example.vigi.androiddownload.download.DownloadRequest;
+import com.example.vigi.androiddownload.core.DownloadManager;
+import com.example.vigi.androiddownload.core.DownloadRequest;
 
 import java.io.File;
 
