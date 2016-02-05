@@ -105,7 +105,8 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     }
 
     /**
-     * cancel后无法再次启动
+     * cancel request and it cannot reuse any more
+     * <p>It doesn't take effect immediately until {@link #onCanceled()} reached</p>
      */
     public void cancel() {
         mCancel = true;
