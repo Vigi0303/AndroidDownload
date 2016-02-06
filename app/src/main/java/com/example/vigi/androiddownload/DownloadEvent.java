@@ -7,6 +7,13 @@ import com.example.vigi.androiddownload.core.DownloadResult;
  * Created by Vigi on 2016/2/5.
  */
 public class DownloadEvent {
+    public static class Create {
+        public DownloadRequest request;
+
+        public Create(DownloadRequest request) {
+            this.request = request;
+        }
+    }
     public static class DisPatched {
         public DownloadRequest request;
 

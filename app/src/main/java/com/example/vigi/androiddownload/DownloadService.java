@@ -12,17 +12,12 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.util.IOUtils;
 import com.example.vigi.androiddownload.core.DownloadDelivery;
 import com.example.vigi.androiddownload.core.DownloadManager;
 import com.example.vigi.androiddownload.core.DownloadRequest;
 import com.example.vigi.androiddownload.core.DownloadResult;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 
 /**
  * Created by Vigi on 2016/1/25.
@@ -107,34 +102,13 @@ public class DownloadService extends Service {
         // continue from last position if we have
         File infoJsonFile = new File(targetFile.getParent(), "info.json");
         long downloadedSize = 0;
-        DownloadTask task = generateBean(infoJsonFile);
-        if (task != null && targetFile.exists()) {
-            if (task.totalSize == targetFile.length()) {
-                downloadedSize = task.downloadedSize;
+        TaskAccessor task = new TaskAccessor(infoJsonFile);
+        if (targetFile.exists()) {
+            if (task.info.totalSize == targetFile.length()) {
+                downloadedSize = task.info.downloadedSize;
             }
         }
         return downloadedSize;
-    }
-
-    private DownloadTask generateBean(File infoJsonFile) {
-        if (infoJsonFile.exists()) {
-            FileReader reader = null;
-            try {
-                reader = new FileReader(infoJsonFile);
-                StringBuilder sb = new StringBuilder();
-                char[] buffer = new char[512];
-                int len;
-                while ((len = reader.read(buffer)) != -1) {
-                    sb.append(buffer, 0, len);
-                }
-                return JSON.parseObject(sb.toString(), DownloadTask.class);
-            } catch (java.io.IOException e) {
-                Log.e("vigi", "read failed", e);
-            } finally {
-                IOUtils.close(reader);
-            }
-        }
-        return null;
     }
 
     private void postEventOnMainThread(Object event) {
@@ -148,64 +122,66 @@ public class DownloadService extends Service {
     }
 
     class DownloadRequestImpl extends DownloadRequest {
+        private final TaskAccessor mTask;
+
         public DownloadRequestImpl(@NonNull String urlStr, @NonNull File file, long startPos) {
             super(urlStr, file, startPos);
+            mTask = new TaskAccessor(new File(file.getParent(), "info.json"));
         }
 
         @Override
         protected void onCreate() {
-            File targetFile = getTargetFile();
-            File infoJsonFile = new File(targetFile.getParent(), "info.json");
-            DownloadTask task = generateBean(infoJsonFile);
-            if (task == null) {
-                task = new DownloadTask();
-                task.url = getOriginalUrl();
-                task.downloadedSize = getCurrentBytes();
-                task.status = DownloadTask.WAIT;
-                task.createTime = System.currentTimeMillis();
-                task.title = task.url;
+            mTask.status = TaskAccessor.WAIT;
+            mTask.info.url = getOriginalUrl();
+            mTask.info.downloadedSize = getCurrentBytes();
+            if (mTask.info.createTime == 0) {
+                mTask.info.createTime = System.currentTimeMillis();
             }
-
-            syncTaskWriter(task);
-        }
-
-        private boolean syncTaskWriter(DownloadTask task) {
-            File targetFile = getTargetFile();
-            File infoJsonFile = new File(targetFile.getParent(), "info.json");
-            FileWriter writer = null;
-            try {
-                writer = new FileWriter(infoJsonFile, false);
-                writer.write(JSON.toJSONString(task));
-            } catch (IOException e) {
+            mTask.info.title = getOriginalUrl();
+            mTask.info.isCompleted = false;
+            if (!mTask.syncInfoFile()) {
                 cancel();
-                Log.e("vigi", "write failed", e);
-            } finally {
-                IOUtils.close(writer);
             }
+            postEventOnMainThread(new DownloadEvent.Create(this));
         }
 
         @Override
         protected void onDispatched() {
+            mTask.status = TaskAccessor.PROCESSING;
             postEventOnMainThread(new DownloadEvent.DisPatched(this));
         }
 
         @Override
         protected void onReadLength(long totalBytes) {
+            mTask.info.totalSize = totalBytes;
             postEventOnMainThread(new DownloadEvent.ReadLength(this, totalBytes));
         }
 
         @Override
-        protected void onFinish(DownloadResult result) {
-            postEventOnMainThread(new DownloadEvent.Finish(this, result));
-        }
-
-        @Override
         protected void onLoading(long downloadedBytes) {
+            mTask.status = TaskAccessor.DOWNLOADING;
+            mTask.info.downloadedSize = downloadedBytes;
+//            mTask.syncInfoFile();          // this action is invoked too often and may cause IO crowding
             postEventOnMainThread(new DownloadEvent.Loading(this, downloadedBytes));
         }
 
         @Override
+        protected void onFinish(DownloadResult result) {
+            if (result.isSuccess()) {
+                mTask.status = TaskAccessor.FINISH;
+                mTask.info.isCompleted = true;
+                mTask.info.finishTime = System.currentTimeMillis();
+            } else {
+                mTask.status = TaskAccessor.ERROR;
+            }
+            mTask.syncInfoFile();
+            postEventOnMainThread(new DownloadEvent.Finish(this, result));
+        }
+
+        @Override
         protected void onCanceled() {
+            mTask.status = TaskAccessor.PAUSE;
+            mTask.syncInfoFile();
             postEventOnMainThread(new DownloadEvent.Canceled(this));
         }
     }
