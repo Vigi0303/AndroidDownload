@@ -107,6 +107,7 @@ public class DownloadWorker {
                     Log.e("vigi", "some one kill me!!", e);
                 }
             } finally {
+                mDelivery.postLoading(mDownloadRequest, downloadedBytes);
                 if (response != null) {
                     response.disconnect();
                 }
