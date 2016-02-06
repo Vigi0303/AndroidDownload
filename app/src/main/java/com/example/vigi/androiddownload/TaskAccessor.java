@@ -34,7 +34,7 @@ public class TaskAccessor {
                     sb.append(buffer, 0, len);
                 }
                 info = JSON.parseObject(sb.toString(), TaskInfoObject.class);
-            } catch (java.io.IOException e) {
+            } catch (IOException e) {
                 Log.e("vigi", "read failed", e);
             } finally {
                 IOUtils.close(reader);

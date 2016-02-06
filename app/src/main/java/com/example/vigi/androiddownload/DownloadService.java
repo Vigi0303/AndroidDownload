@@ -92,15 +92,9 @@ public class DownloadService extends Service {
         int guessEnd = url.lastIndexOf("?");
         String guessName = url.substring(url.lastIndexOf("/") + 1, guessEnd == -1 ? url.length() : guessEnd);
         String hashStr = String.valueOf(url.hashCode());
-        File file = new File(getExternalFilesDir("download/" + hashStr), guessName);
-        DownloadRequest downloadRequest = new DownloadRequestImpl(url, file, lookupInfoFile(file));
-        downloadRequest.setTimeOut(10000);  // 10s to debug
-        mDownloadManager.addDownload(downloadRequest);
-    }
-
-    private long lookupInfoFile(File targetFile) {
+        File targetFile = new File(getExternalFilesDir("download/" + hashStr), guessName);
         // continue from last position if we have
-        File infoJsonFile = new File(targetFile.getParent(), "info.json");
+        File infoJsonFile = new File(getExternalFilesDir("download/" + hashStr), "info.json");
         long downloadedSize = 0;
         TaskAccessor task = new TaskAccessor(infoJsonFile);
         if (targetFile.exists()) {
@@ -108,7 +102,9 @@ public class DownloadService extends Service {
                 downloadedSize = task.info.downloadedSize;
             }
         }
-        return downloadedSize;
+        DownloadRequest downloadRequest = new DownloadRequestImpl(url, targetFile, downloadedSize, task);
+        downloadRequest.setTimeOut(10000);  // 10s to debug
+        mDownloadManager.addDownload(downloadRequest);
     }
 
     private void postEventOnMainThread(Object event) {
@@ -124,9 +120,9 @@ public class DownloadService extends Service {
     class DownloadRequestImpl extends DownloadRequest {
         private final TaskAccessor mTask;
 
-        public DownloadRequestImpl(@NonNull String urlStr, @NonNull File file, long startPos) {
+        public DownloadRequestImpl(@NonNull String urlStr, @NonNull File file, long startPos, TaskAccessor accessor) {
             super(urlStr, file, startPos);
-            mTask = new TaskAccessor(new File(file.getParent(), "info.json"));
+            mTask = accessor;
         }
 
         @Override
@@ -139,9 +135,7 @@ public class DownloadService extends Service {
             }
             mTask.info.title = getOriginalUrl();
             mTask.info.isCompleted = false;
-            if (!mTask.syncInfoFile()) {
-                cancel();
-            }
+            mTask.syncInfoFile();
             postEventOnMainThread(new DownloadEvent.Create(this));
         }
 
