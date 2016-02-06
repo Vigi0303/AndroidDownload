@@ -25,8 +25,9 @@ public class DownloadDispatcher extends Thread {
     public void run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         while (true) {
+            DownloadRequest downloadRequest = null;
             try {
-                DownloadRequest downloadRequest = mRequestQueue.take();
+                downloadRequest = mRequestQueue.take();
 
                 mDelivery.postDispatched(downloadRequest);
                 DownloadWorker worker = new DownloadWorker(mNetWorkPerformer, mDelivery, downloadRequest);
@@ -37,6 +38,10 @@ public class DownloadDispatcher extends Thread {
                 }
                 mDelivery.postFinish(downloadRequest, result);
             } catch (InterruptedException e) {
+                if (downloadRequest != null) {
+                    mDelivery.postFinish(downloadRequest,
+                            new DownloadResult(new DownloadException(DownloadException.THREAD_INTERRUPTED)));
+                }
                 if (mQuit) {
                     return;
                 }

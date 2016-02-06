@@ -56,6 +56,11 @@ public class DownloadException extends Exception {
      */
     public static final int SOCKET_TIMEOUT = 106;
 
+    /**
+     * a substitute of {@link InterruptedException}
+     */
+    public static final int THREAD_INTERRUPTED = 107;
+
     public static final int UNKNOWN_NETWORK = 500;
 
     /**

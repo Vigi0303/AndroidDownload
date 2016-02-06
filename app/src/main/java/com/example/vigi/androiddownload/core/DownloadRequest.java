@@ -60,7 +60,7 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
         return mStartPos;
     }
 
-    public void setStartPos(long startPos) {
+    protected void setStartPos(long startPos) {
         mStartPos = startPos;
     }
 
@@ -92,6 +92,12 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
         return mTimeOut;
     }
 
+    /**
+     * the request will auto retry while network has problem.
+     * <p>It's convenient while in unstable network condition or
+     * interval of switching between wifi and cellular network.</p>
+     * <p>default to 0</p>
+     */
     public void setTimeOut(int timeOut) {
         mTimeOut = timeOut;
     }
@@ -138,14 +144,26 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
 
     }
 
+    /**
+     * call back when task finish.
+     * <p>include success, error and thread interruption</p>
+     * <p>error in {@link DownloadRequest} has a constant code list in {@link DownloadException}</p>
+     */
     protected void onFinish(DownloadResult result) {
 
     }
 
+    /**
+     * call back when task is downloading.
+     * <p>You can custom the frequency by {@link #setRate(int)}</p>
+     */
     protected void onLoading(long downloadedBytes) {
 
     }
 
+    /**
+     * call back when task is canceled by invoke {@link #cancel()}
+     */
     protected void onCanceled() {
 
     }
