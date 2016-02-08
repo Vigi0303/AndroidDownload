@@ -116,7 +116,6 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
      */
     public void cancel() {
         mCancel = true;
-        mTargetFile = null;
     }
 
     public boolean isCancel() {
