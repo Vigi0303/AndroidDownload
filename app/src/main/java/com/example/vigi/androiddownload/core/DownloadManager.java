@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DownloadManager {
     private static final String DEFAULT_USER_AGENT = "AndroidDownload / 1.0";   // TODO: 2016/1/26 to be confirmed
     private static AtomicInteger SequenceGenerator = new AtomicInteger(0);
-    private UrlConnectionPerformer mNetWorkPerformer;
+    private NetWorkPerformer mNetWorkPerformer;
     private DownloadDispatcher mDispatcher;
     private BlockingQueue<DownloadRequest> mRequestQueue;
     private DownloadDelivery mDelivery;
@@ -27,7 +27,7 @@ public class DownloadManager {
      * @param delivery         delivery {@link DownloadRequest#onLoading(long)}, {@link DownloadRequest#onFinish(DownloadResult)} and etc.
      *                         you can assign a {@link Looper} to {@link DownloadDelivery}
      */
-    public DownloadManager(UrlConnectionPerformer netWorkPerformer, DownloadDelivery delivery) {
+    public DownloadManager(NetWorkPerformer netWorkPerformer, DownloadDelivery delivery) {
         if (netWorkPerformer == null) {
             mNetWorkPerformer = new UrlConnectionPerformer(DEFAULT_USER_AGENT);
         } else {
