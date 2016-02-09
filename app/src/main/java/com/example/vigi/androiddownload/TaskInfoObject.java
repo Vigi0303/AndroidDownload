@@ -4,6 +4,11 @@ package com.example.vigi.androiddownload;
  * Created by Vigi on 2016/2/6.
  */
 public class TaskInfoObject {
+    /**
+     * you should assign a unique ID, in you own condition.
+     * <p>we use hashCode here.</p>
+     */
+    public int id;
     public String url;
     public String title;
     public long totalSize;

@@ -19,7 +19,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".DownloadManagerActivity"/>
+        <activity android:name=".TaskListActivity"/>
 
         <service android:name=".DownloadService"/>
     </application>

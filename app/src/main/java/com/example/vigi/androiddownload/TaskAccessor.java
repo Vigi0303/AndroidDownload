@@ -57,6 +57,24 @@ public class TaskAccessor {
 
     public int status;
 
+    public String statusToString() {
+        switch (status) {
+            case WAIT:
+                return "WAIT";
+            case DOWNLOADING:
+                return "DOWNLOADING";
+            case PAUSE:
+                return "PAUSE";
+            case ERROR:
+                return "ERROR";
+            case FINISH:
+                return "FINISH";
+            case PROCESSING:
+                return "PROCESSING";
+        }
+        return "";
+    }
+
     public boolean syncInfoFile() {
         FileWriter writer = null;
         try {

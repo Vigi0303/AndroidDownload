@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AndroidDownload</string>
+    <string name="empty_content">It\'s empty.</string>
 </resources>

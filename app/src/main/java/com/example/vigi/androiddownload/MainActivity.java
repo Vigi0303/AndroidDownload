@@ -36,14 +36,14 @@ public class MainActivity extends Activity {
     void onAddClick() {
         String url = mUrlText.getText().toString();
         Bundle extra = new Bundle();
-        extra.putInt(DownloadService.BUNDLE_ACTION, DownloadService.ACTION_NEW_DOWNLOAD_VIDEO);
+        extra.putInt(DownloadService.BUNDLE_ACTION, DownloadService.ACTION_NEW_TASK);
         extra.putString(DownloadService.BUNDLE_URL, url);
         startService(new Intent(this, DownloadService.class).putExtras(extra));
     }
 
     @OnClick(R.id.show_list)
     void onShowListClick() {
-        startActivity(new Intent(this, DownloadManagerActivity.class));
+        startActivity(new Intent(this, TaskListActivity.class));
     }
 
     @OnClick(R.id.stop_all)

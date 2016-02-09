@@ -10,7 +10,12 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.example.vigi.androiddownload.presenter.TaskListPresenter;
+import com.example.vigi.androiddownload.view.ITaskListView;
 import com.squareup.otto.Subscribe;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -18,10 +23,17 @@ import butterknife.ButterKnife;
 /**
  * Created by Vigi on 2016/1/15.
  */
-public class DownloadManagerActivity extends Activity {
+public class TaskListActivity extends Activity implements ITaskListView {
     @Bind(R.id.list_view)
     RecyclerView mRecyclerView;
 
+    @Bind(R.id.loading_view)
+    ProgressBar mLoadingView;
+
+    @Bind(R.id.empty_view)
+    ProgressBar mEmptyView;
+
+    TaskListPresenter mPresenter;
     DownloadListAdapter mListAdapter;
 
     @Override
@@ -30,9 +42,12 @@ public class DownloadManagerActivity extends Activity {
         setContentView(R.layout.activity_download_manager);
         ButterKnife.bind(this);
 
+        mPresenter = new TaskListPresenter(this);
         mListAdapter = new DownloadListAdapter();
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.setAdapter(mListAdapter);
+
+        mPresenter.requestTaskList();
     }
 
     @Override
@@ -45,6 +60,12 @@ public class DownloadManagerActivity extends Activity {
     protected void onPause() {
         EventBus.getInstance().unregister(this);
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mPresenter.onDestroy();
+        super.onDestroy();
     }
 
     @Subscribe
@@ -72,8 +93,32 @@ public class DownloadManagerActivity extends Activity {
 
     }
 
+    @Override
+    public void showLoading() {
+        mRecyclerView.setVisibility(View.GONE);
+        mLoadingView.setVisibility(View.VISIBLE);
+        mEmptyView.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void showEmpty() {
+        mRecyclerView.setVisibility(View.GONE);
+        mLoadingView.setVisibility(View.GONE);
+        mEmptyView.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void showContent(List<TaskAccessor> accessorList) {
+        mRecyclerView.setVisibility(View.VISIBLE);
+        mLoadingView.setVisibility(View.GONE);
+        mEmptyView.setVisibility(View.GONE);
+
+        mListAdapter.fillData(accessorList);
+    }
 
     class DownloadListAdapter extends RecyclerView.Adapter<DownloadItemHolder> {
+        List<TaskAccessor> mAccessorList = new ArrayList<>();
+
         @Override
         public DownloadItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             return new DownloadItemHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_download, parent, false));
@@ -81,12 +126,22 @@ public class DownloadManagerActivity extends Activity {
 
         @Override
         public void onBindViewHolder(DownloadItemHolder holder, int position) {
+            TaskAccessor taskAccessor = mAccessorList.get(position);
+            holder.mItemTitle.setText(taskAccessor.info.title);
+            holder.mItemProgress.setProgress((int) (100 * taskAccessor.info.downloadedSize / taskAccessor.info.totalSize));
+            holder.mItemStatus.setText(taskAccessor.statusToString());
+            holder.mItemSpeed.setText(""); // TODO: 2016/2/8 add speed support
+        }
 
+        void fillData(List<TaskAccessor> accessorList) {
+            mAccessorList.clear();
+            mAccessorList.addAll(accessorList);
+            notifyDataSetChanged();
         }
 
         @Override
         public int getItemCount() {
-            return 0;
+            return mAccessorList.size();
         }
     }
 
@@ -102,8 +157,6 @@ public class DownloadManagerActivity extends Activity {
 
         @Bind(R.id.item_download_speed)
         TextView mItemSpeed;
-
-        TaskAccessor mTaskAccessor = null;
 
         public DownloadItemHolder(View itemView) {
             super(itemView);

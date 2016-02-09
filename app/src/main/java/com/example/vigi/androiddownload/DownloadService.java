@@ -27,11 +27,12 @@ public class DownloadService extends Service {
 
     public static final String BUNDLE_ACTION = "action";
     public static final String BUNDLE_URL = "url";
+    public static final String BUNDLE_TASK_ID = "taskId";
 
-    public static final int ACTION_NEW_DOWNLOAD_VIDEO = 0x0101;
-    public static final int ACTION_PAUSE_VIDEOS = 0x0102;
+    public static final int ACTION_NEW_TASK = 0x0101;
+    public static final int ACTION_PAUSE_TASK = 0x0102;
     public static final int ACTION_DELETE_VIDEOS = 0x0103;
-    public static final int ACTION_RESUME_DOWNLOAD_VIDEOS = 0x0104;
+    public static final int ACTION_RESUME_TASK = 0x0104;
     public static final int ACTION_STOP_ALL = 0x0105;
 
     private HandlerThread mDAOThread;
@@ -59,6 +60,7 @@ public class DownloadService extends Service {
                 return false;
             }
         });
+        TaskManager.getInstance();
     }
 
     @Override
@@ -69,18 +71,42 @@ public class DownloadService extends Service {
         }
         int action = intent.getIntExtra(BUNDLE_ACTION, -1);
         switch (action) {
-            case ACTION_NEW_DOWNLOAD_VIDEO:
+            case ACTION_NEW_TASK: {
                 String url = intent.getStringExtra(BUNDLE_URL);
                 if (TextUtils.isEmpty(url)) {
                     return START_NOT_STICKY;
                 }
                 addNewTask(url);
-                return START_STICKY;
-            case ACTION_STOP_ALL:
+                break;
+            }
+            case ACTION_PAUSE_TASK: {
+                int taskId = intent.getIntExtra(BUNDLE_TASK_ID, -1);
+                if (taskId != -1) {
+                    return START_NOT_STICKY;
+                }
+                TaskManager.getInstance().cancel(taskId);
+                break;
+            }
+            case ACTION_RESUME_TASK: {
+                int taskId = intent.getIntExtra(BUNDLE_TASK_ID, -1);
+                if (taskId != -1) {
+                    return START_NOT_STICKY;
+                }
+                TaskAccessor task = TaskManager.getInstance().getAccessor(taskId);
+                if (task == null) {
+                    return START_NOT_STICKY;
+                }
+                if (task.status == TaskAccessor.FINISH
+                        || task.status == TaskAccessor.DOWNLOADING) {
+                    return START_NOT_STICKY;
+                }
+                resumeTask(task);
+                break;
+            }
+            case ACTION_STOP_ALL: {
                 mDownloadManager.stop();
-                return START_NOT_STICKY;
-            case ACTION_PAUSE_VIDEOS:
-            case ACTION_RESUME_DOWNLOAD_VIDEOS:
+                break;
+            }
             default:
                 Log.w(TAG, "UnHandle DownloadService command: " + action);
                 break;
@@ -93,18 +119,30 @@ public class DownloadService extends Service {
         String guessName = url.substring(url.lastIndexOf("/") + 1, guessEnd == -1 ? url.length() : guessEnd);
         String hashStr = String.valueOf(url.hashCode());
         File targetFile = new File(getExternalFilesDir("download/" + hashStr), guessName);
-        // continue from last position if we have
         File infoJsonFile = new File(getExternalFilesDir("download/" + hashStr), "info.json");
-        long downloadedSize = 0;
         TaskAccessor task = new TaskAccessor(infoJsonFile);
+        DownloadRequest request = new DownloadRequestImpl(url, targetFile, 0, task);
+        request.setTimeOut(10000);  // 10s to debug
+        mDownloadManager.addDownload(request);
+        TaskManager.getInstance().addRequest(request);
+    }
+
+    private void resumeTask(TaskAccessor task) {
+        String hashStr = String.valueOf(task.info.url.hashCode());
+        File targetFile = new File(getExternalFilesDir("download/" + hashStr), task.info.fileName);
+        // continue from last position if we have
+        long downloadedSize = 0;
         if (targetFile.exists()) {
             if (task.info.totalSize == targetFile.length()) {
                 downloadedSize = task.info.downloadedSize;
             }
         }
-        DownloadRequest downloadRequest = new DownloadRequestImpl(url, targetFile, downloadedSize, task);
-        downloadRequest.setTimeOut(10000);  // 10s to debug
-        mDownloadManager.addDownload(downloadRequest);
+        DownloadRequest request = new DownloadRequestImpl(
+                task.info.url, targetFile, downloadedSize, task
+        );
+        request.setTimeOut(10000);  // 10s to debug
+        mDownloadManager.addDownload(request);
+        TaskManager.getInstance().addRequest(request);
     }
 
     private void postEventOnMainThread(Object event) {
@@ -120,7 +158,8 @@ public class DownloadService extends Service {
     class DownloadRequestImpl extends DownloadRequest {
         private final TaskAccessor mTask;
 
-        public DownloadRequestImpl(@NonNull String urlStr, @NonNull File file, long startPos, TaskAccessor accessor) {
+        public DownloadRequestImpl(@NonNull String urlStr, @NonNull File file,
+                                   long startPos, TaskAccessor accessor) {
             super(urlStr, file, startPos);
             mTask = accessor;
         }
@@ -128,7 +167,9 @@ public class DownloadService extends Service {
         @Override
         protected void onCreate() {
             mTask.status = TaskAccessor.WAIT;
+            mTask.info.id = getOriginalUrl().hashCode();
             mTask.info.url = getOriginalUrl();
+            mTask.info.fileName = getTargetFile().getName();
             mTask.info.downloadedSize = getCurrentBytes();
             if (mTask.info.createTime == 0) {
                 mTask.info.createTime = System.currentTimeMillis();
@@ -169,6 +210,7 @@ public class DownloadService extends Service {
                 mTask.status = TaskAccessor.ERROR;
             }
             mTask.syncInfoFile();
+            TaskManager.getInstance().removeRequest(mTask.info.id);
             postEventOnMainThread(new DownloadEvent.Finish(this, result));
         }
 
@@ -176,6 +218,7 @@ public class DownloadService extends Service {
         protected void onCanceled() {
             mTask.status = TaskAccessor.PAUSE;
             mTask.syncInfoFile();
+            TaskManager.getInstance().removeRequest(mTask.info.id);
             postEventOnMainThread(new DownloadEvent.Canceled(this));
         }
     }
