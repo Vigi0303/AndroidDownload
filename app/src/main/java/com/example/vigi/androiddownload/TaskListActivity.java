@@ -35,6 +35,7 @@ public class TaskListActivity extends Activity implements ITaskListView {
 
     TaskListPresenter mPresenter;
     DownloadListAdapter mListAdapter;
+    List<TaskAccessor> mAccessorList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,11 +114,12 @@ public class TaskListActivity extends Activity implements ITaskListView {
         mLoadingView.setVisibility(View.GONE);
         mEmptyView.setVisibility(View.GONE);
 
-        mListAdapter.fillData(accessorList);
+        mAccessorList.clear();
+        mAccessorList.addAll(accessorList);
+        mListAdapter.notifyDataSetChanged();
     }
 
     class DownloadListAdapter extends RecyclerView.Adapter<DownloadItemHolder> {
-        List<TaskAccessor> mAccessorList = new ArrayList<>();
 
         @Override
         public DownloadItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -131,12 +133,6 @@ public class TaskListActivity extends Activity implements ITaskListView {
             holder.mItemProgress.setProgress((int) (100 * taskAccessor.info.downloadedSize / taskAccessor.info.totalSize));
             holder.mItemStatus.setText(taskAccessor.statusToString());
             holder.mItemSpeed.setText(""); // TODO: 2016/2/8 add speed support
-        }
-
-        void fillData(List<TaskAccessor> accessorList) {
-            mAccessorList.clear();
-            mAccessorList.addAll(accessorList);
-            notifyDataSetChanged();
         }
 
         @Override
@@ -166,6 +162,7 @@ public class TaskListActivity extends Activity implements ITaskListView {
 
         @Override
         public void onClick(View v) {
+            TaskAccessor task = mAccessorList.get(getAdapterPosition());
 
         }
     }

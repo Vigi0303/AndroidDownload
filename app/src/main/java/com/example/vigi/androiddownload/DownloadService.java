@@ -31,7 +31,7 @@ public class DownloadService extends Service {
 
     public static final int ACTION_NEW_TASK = 0x0101;
     public static final int ACTION_PAUSE_TASK = 0x0102;
-    public static final int ACTION_DELETE_VIDEOS = 0x0103;
+    public static final int ACTION_DELETE_TASK = 0x0103;
     public static final int ACTION_RESUME_TASK = 0x0104;
     public static final int ACTION_STOP_ALL = 0x0105;
 
@@ -105,6 +105,10 @@ public class DownloadService extends Service {
             }
             case ACTION_STOP_ALL: {
                 mDownloadManager.stop();
+                break;
+            }
+            case ACTION_DELETE_TASK: {
+                // TODO: 2016/2/9 delete task
                 break;
             }
             default:
