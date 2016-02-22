@@ -1,9 +1,8 @@
 package com.example.vigi.androiddownload;
 
-import android.util.Log;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.util.IOUtils;
+import com.example.vigi.androiddownload.core.LogHelper;
 
 import java.io.File;
 import java.io.FileReader;
@@ -35,7 +34,7 @@ public class TaskAccessor {
                 }
                 info = JSON.parseObject(sb.toString(), TaskInfoObject.class);
             } catch (IOException e) {
-                Log.e("vigi", "read failed", e);
+                LogHelper.logError("read failed", e);
             } finally {
                 IOUtils.close(reader);
             }
@@ -75,6 +74,10 @@ public class TaskAccessor {
         return "";
     }
 
+    public boolean validateInfoJson() {
+        return info.id != 0;
+    }
+
     public boolean syncInfoFile() {
         FileWriter writer = null;
         try {
@@ -82,7 +85,7 @@ public class TaskAccessor {
             writer.write(JSON.toJSONString(info));
             return true;
         } catch (IOException e) {
-            Log.e("vigi", "write failed", e);
+            LogHelper.logError("write failed", e);
         } finally {
             IOUtils.close(writer);
         }

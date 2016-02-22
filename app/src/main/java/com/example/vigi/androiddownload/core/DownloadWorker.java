@@ -1,7 +1,6 @@
 package com.example.vigi.androiddownload.core;
 
 import android.os.SystemClock;
-import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -40,7 +39,7 @@ public class DownloadWorker {
             NetWorkResponse response = null;
             DownloadException error = null;
             try {
-                Log.e("vigi", "I am performing~");
+                LogHelper.logError("I am performing~");
                 response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest, mDownloadRequest.getStartPos() + downloadedBytes);
                 timeMsRecord = SystemClock.elapsedRealtime();
                 if (mDownloadRequest.isCancel()) {
@@ -68,7 +67,7 @@ public class DownloadWorker {
                     if (currTime - lastTimeMs >= mDownloadRequest.getRate()) {
                         lastTimeMs = currTime;
                         mDelivery.postLoading(mDownloadRequest, downloadedBytes);
-                        Log.e("vigi", "I receive " + bytesLen + " and downloaded " + downloadedBytes + " :)");
+                        LogHelper.logError("I receive " + bytesLen + " and downloaded " + downloadedBytes + " :)");
                     }
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
@@ -77,7 +76,7 @@ public class DownloadWorker {
                         return null;
                     }
                 }
-                Log.e("vigi", "I read finish. bytesLen=" + bytesLen + " and total size=" + downloadedBytes);
+                LogHelper.logError("I read finish. bytesLen=" + bytesLen + " and total size=" + downloadedBytes);
             } catch (InterruptedException e) {
                 throw e;
             } catch (Exception e) {
@@ -97,14 +96,14 @@ public class DownloadWorker {
                 if (error.isBadNetwork()) {
                     int waitMs = (int) (SystemClock.elapsedRealtime() - timeMsRecord);
                     if (waitMs <= mDownloadRequest.getTimeOut()) {
-                        Log.e("vigi", "wait for network: " + waitMs + "ms");
+                        LogHelper.logError("wait for network: " + waitMs + "ms");
                         Thread.sleep(SLEEP_INTERNAL_MS);       // I need have a rest
                         retryCount += 1;
                         continue;
                     }
-                    Log.e("vigi", "I give up ... for wait " + waitMs + "ms");
+                    LogHelper.logError("I give up ... for wait " + waitMs + "ms");
                 } else {
-                    Log.e("vigi", "some one kill me!!", e);
+                    LogHelper.logError("some one kill me!!", e);
                 }
             } finally {
                 mDelivery.postLoading(mDownloadRequest, downloadedBytes);
@@ -120,7 +119,7 @@ public class DownloadWorker {
                         bos.close();
                     }
                 } catch (IOException e) {
-                    Log.e("vigi", "unknown error", e);
+                    LogHelper.logError("unknown error", e);
                 }
             }
             return new DownloadResult(error);

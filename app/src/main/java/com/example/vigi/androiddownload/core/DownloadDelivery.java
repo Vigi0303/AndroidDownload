@@ -60,37 +60,37 @@ public class DownloadDelivery {
             switch (msg.what) {
                 case MSG_CREATE: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onCreate");
+                    LogHelper.logError("request(" + request.getOriginalUrl() + ")onCreate");
                     request.onCreate();
                     break;
                 }
                 case MSG_DISPATCHED: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onDispatched");
+                    LogHelper.logError("request(" + request.getOriginalUrl() + ")onDispatched");
                     request.onDispatched();
                     break;
                 }
                 case MSG_FINISH: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onFinish");
+                    LogHelper.logError("request(" + request.getOriginalUrl() + ")onFinish");
                     request.onFinish(request.getResult());
                     break;
                 }
                 case MSG_LOADING: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-//                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onLoading(" + request.getCurrentBytes() + ")");
+//                    LogHelper.logError("request(" + request.getOriginalUrl() + ")onLoading(" + request.getCurrentBytes() + ")");
                     request.onLoading(request.getCurrentBytes());
                     break;
                 }
                 case MSG_READ_LENGTH: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onReadLength(" + request.getTotalBytes() + ")");
+                    LogHelper.logError("request(" + request.getOriginalUrl() + ")onReadLength(" + request.getTotalBytes() + ")");
                     request.onReadLength(request.getTotalBytes());
                     break;
                 }
                 case MSG_CANCELED: {
                     DownloadRequest request = (DownloadRequest) msg.obj;
-                    Log.e("vigi", "request(" + request.getOriginalUrl() + ")onCanceled");
+                    LogHelper.logError("request(" + request.getOriginalUrl() + ")onCanceled");
                     request.onCanceled();
                     break;
                 }

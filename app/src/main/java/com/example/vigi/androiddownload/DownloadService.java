@@ -122,18 +122,18 @@ public class DownloadService extends Service {
         int guessEnd = url.lastIndexOf("?");
         String guessName = url.substring(url.lastIndexOf("/") + 1, guessEnd == -1 ? url.length() : guessEnd);
         String hashStr = String.valueOf(url.hashCode());
-        File targetFile = new File(getExternalFilesDir("download/" + hashStr), guessName);
-        File infoJsonFile = new File(getExternalFilesDir("download/" + hashStr), "info.json");
+        File targetFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), guessName);
+        File infoJsonFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), TaskManager.INFO_FILE_NAME);
         TaskAccessor task = new TaskAccessor(infoJsonFile);
         DownloadRequest request = new DownloadRequestImpl(url, targetFile, 0, task);
         request.setTimeOut(10000);  // 10s to debug
         mDownloadManager.addDownload(request);
-        TaskManager.getInstance().addRequest(request);
+        TaskManager.getInstance().addRequest(request, task);
     }
 
     private void resumeTask(TaskAccessor task) {
         String hashStr = String.valueOf(task.info.url.hashCode());
-        File targetFile = new File(getExternalFilesDir("download/" + hashStr), task.info.fileName);
+        File targetFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), task.info.fileName);
         // continue from last position if we have
         long downloadedSize = 0;
         if (targetFile.exists()) {
@@ -146,7 +146,7 @@ public class DownloadService extends Service {
         );
         request.setTimeOut(10000);  // 10s to debug
         mDownloadManager.addDownload(request);
-        TaskManager.getInstance().addRequest(request);
+        TaskManager.getInstance().addRequest(request, task);
     }
 
     private void postEventOnMainThread(Object event) {
@@ -193,6 +193,7 @@ public class DownloadService extends Service {
         @Override
         protected void onReadLength(long totalBytes) {
             mTask.info.totalSize = totalBytes;
+            mTask.syncInfoFile();
             postEventOnMainThread(new DownloadEvent.ReadLength(this, totalBytes));
         }
 
