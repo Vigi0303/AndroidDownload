@@ -30,7 +30,6 @@ public class DownloadService extends Service {
     public static final String BUNDLE_TASK_ID = "taskId";
 
     public static final int ACTION_NEW_TASK = 0x0101;
-    public static final int ACTION_PAUSE_TASK = 0x0102;
     public static final int ACTION_DELETE_TASK = 0x0103;
     public static final int ACTION_RESUME_TASK = 0x0104;
     public static final int ACTION_STOP_ALL = 0x0105;
@@ -79,17 +78,9 @@ public class DownloadService extends Service {
                 addNewTask(url);
                 break;
             }
-            case ACTION_PAUSE_TASK: {
-                int taskId = intent.getIntExtra(BUNDLE_TASK_ID, -1);
-                if (taskId != -1) {
-                    return START_NOT_STICKY;
-                }
-                TaskManager.getInstance().cancel(taskId);
-                break;
-            }
             case ACTION_RESUME_TASK: {
                 int taskId = intent.getIntExtra(BUNDLE_TASK_ID, -1);
-                if (taskId != -1) {
+                if (taskId == -1) {
                     return START_NOT_STICKY;
                 }
                 TaskAccessor task = TaskManager.getInstance().getAccessor(taskId);
@@ -127,8 +118,8 @@ public class DownloadService extends Service {
         TaskAccessor task = new TaskAccessor(infoJsonFile);
         DownloadRequest request = new DownloadRequestImpl(url, targetFile, 0, task);
         request.setTimeOut(10000);  // 10s to debug
-        mDownloadManager.addDownload(request);
         TaskManager.getInstance().addRequest(request, task);
+        mDownloadManager.addDownload(request);
     }
 
     private void resumeTask(TaskAccessor task) {
@@ -187,14 +178,14 @@ public class DownloadService extends Service {
         @Override
         protected void onDispatched() {
             mTask.status = TaskAccessor.PROCESSING;
-            postEventOnMainThread(new DownloadEvent.DisPatched(this));
+            postEventOnMainThread(new DownloadEvent.DisPatched(mTask.info.id));
         }
 
         @Override
         protected void onReadLength(long totalBytes) {
             mTask.info.totalSize = totalBytes;
             mTask.syncInfoFile();
-            postEventOnMainThread(new DownloadEvent.ReadLength(this, totalBytes));
+            postEventOnMainThread(new DownloadEvent.ReadLength(mTask.info.id, totalBytes));
         }
 
         @Override
@@ -202,7 +193,7 @@ public class DownloadService extends Service {
             mTask.status = TaskAccessor.DOWNLOADING;
             mTask.info.downloadedSize = downloadedBytes;
 //            mTask.syncInfoFile();          // this action is invoked too often and may cause IO crowding
-            postEventOnMainThread(new DownloadEvent.Loading(this, downloadedBytes));
+            postEventOnMainThread(new DownloadEvent.Loading(mTask.info.id, downloadedBytes));
         }
 
         @Override
@@ -216,15 +207,15 @@ public class DownloadService extends Service {
             }
             mTask.syncInfoFile();
             TaskManager.getInstance().removeRequest(mTask.info.id);
-            postEventOnMainThread(new DownloadEvent.Finish(this, result));
+            postEventOnMainThread(new DownloadEvent.Finish(mTask.info.id, result));
         }
 
         @Override
         protected void onCanceled() {
-            mTask.status = TaskAccessor.PAUSE;
+            mTask.status = TaskAccessor.IDLE;
             mTask.syncInfoFile();
             TaskManager.getInstance().removeRequest(mTask.info.id);
-            postEventOnMainThread(new DownloadEvent.Canceled(this));
+            postEventOnMainThread(new DownloadEvent.Canceled(mTask.info.id));
         }
     }
 }

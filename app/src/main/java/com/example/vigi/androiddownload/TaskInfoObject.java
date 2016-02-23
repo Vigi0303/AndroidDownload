@@ -17,4 +17,19 @@ public class TaskInfoObject {
     public long createTime;
     public long finishTime;
     public String fileName;
+
+    public void copyFrom(TaskInfoObject source) {
+        if (source == this) {
+            return;
+        }
+        id = source.id;
+        url = source.url;
+        title = source.title;
+        totalSize = source.totalSize;
+        downloadedSize = source.downloadedSize;
+        isCompleted = source.isCompleted;
+        createTime = source.createTime;
+        finishTime = source.finishTime;
+        fileName = source.fileName;
+    }
 }

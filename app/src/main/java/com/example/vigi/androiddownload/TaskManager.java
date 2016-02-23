@@ -7,6 +7,8 @@ import com.example.vigi.androiddownload.core.LogHelper;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A container of {@link TaskAccessor} and {@link DownloadRequest} in work queue.
@@ -81,6 +83,12 @@ public class TaskManager {
             request.cancel();
         }
         mRequestInSession.remove(taskId);
+        TaskAccessor task = mAllTaskAccessor.get(taskId);
+        if (task != null) {
+            task.status = TaskAccessor.DISABLED;
+        } else {
+            LogHelper.logError("should not be here");
+        }
     }
 
     public TaskAccessor getAccessor(int taskId) {
@@ -93,5 +101,14 @@ public class TaskManager {
 
     public void removeRequest(int taskId) {
         mRequestInSession.remove(taskId);
+    }
+
+    public List<TaskAccessor> getAllTaskAccessor() {
+        List<TaskAccessor> result = new ArrayList<>();
+        for (int i = 0; i < mAllTaskAccessor.size(); ++i) {
+            TaskAccessor task = mAllTaskAccessor.valueAt(i);
+            result.add(task);
+        }
+        return result;
     }
 }

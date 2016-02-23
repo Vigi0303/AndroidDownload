@@ -13,12 +13,13 @@ import java.io.IOException;
  * Created by Vigi on 2016/1/18.
  */
 public class TaskAccessor {
-    public static final int WAIT = 0;
+    public static final int WAIT = 0;    // ready for download and wait lock
     public static final int DOWNLOADING = 1;
-    public static final int PAUSE = 2;
     public static final int ERROR = 3;
     public static final int FINISH = 4;
-    public static final int PROCESSING = 5;   // disable status to keep it atomic
+    public static final int PROCESSING = 5;
+    public static final int IDLE = 6;  // initial status
+    public static final int DISABLED = 7;   // disable status to keep it atomic
 
     public TaskAccessor(File infoJsonFile) {
         mInfoJsonFile = infoJsonFile;
@@ -48,7 +49,7 @@ public class TaskAccessor {
         if (info == null) {
             info = new TaskInfoObject();
         }
-        status = WAIT;
+        status = IDLE;
     }
 
     private final File mInfoJsonFile;
@@ -62,16 +63,26 @@ public class TaskAccessor {
                 return "WAIT";
             case DOWNLOADING:
                 return "DOWNLOADING";
-            case PAUSE:
-                return "PAUSE";
             case ERROR:
                 return "ERROR";
             case FINISH:
                 return "FINISH";
             case PROCESSING:
                 return "PROCESSING";
+            case IDLE:
+                return "IDLE";
+            case DISABLED:
+                return "DISABLED";
         }
         return "";
+    }
+
+    public void copyFrom(TaskAccessor source) {
+        if (source == this) {
+            return;
+        }
+        status = source.status;
+        info.copyFrom(source.info);
     }
 
     public boolean validateInfoJson() {
@@ -81,6 +92,9 @@ public class TaskAccessor {
     public boolean syncInfoFile() {
         FileWriter writer = null;
         try {
+            if (!mInfoJsonFile.exists()) {
+                mInfoJsonFile.createNewFile();
+            }
             writer = new FileWriter(mInfoJsonFile, false);
             writer.write(JSON.toJSONString(info));
             return true;

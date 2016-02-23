@@ -1,7 +1,11 @@
 package com.example.vigi.androiddownload;
 
-import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.v4.content.res.ResourcesCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -23,7 +27,7 @@ import butterknife.ButterKnife;
 /**
  * Created by Vigi on 2016/1/15.
  */
-public class TaskListActivity extends Activity implements ITaskListView {
+public class TaskListActivity extends AppCompatActivity implements ITaskListView {
     @Bind(R.id.list_view)
     RecyclerView mRecyclerView;
 
@@ -31,7 +35,7 @@ public class TaskListActivity extends Activity implements ITaskListView {
     ProgressBar mLoadingView;
 
     @Bind(R.id.empty_view)
-    ProgressBar mEmptyView;
+    TextView mEmptyView;
 
     TaskListPresenter mPresenter;
     DownloadListAdapter mListAdapter;
@@ -47,6 +51,7 @@ public class TaskListActivity extends Activity implements ITaskListView {
         mListAdapter = new DownloadListAdapter();
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.setAdapter(mListAdapter);
+        mRecyclerView.addItemDecoration(new DefaultItemDecoration());
 
         mPresenter.requestTaskList();
     }
@@ -71,27 +76,35 @@ public class TaskListActivity extends Activity implements ITaskListView {
 
     @Subscribe
     public void onDisPatchedEvent(DownloadEvent.DisPatched event) {
-
+        refreshTask(event.taskId);
     }
 
     @Subscribe
     public void onReadLengthEvent(DownloadEvent.ReadLength event) {
-
+        refreshTask(event.taskId);
     }
 
     @Subscribe
     public void onLoadingEvent(DownloadEvent.Loading event) {
-
+        refreshTask(event.taskId);
     }
 
     @Subscribe
     public void onFinishEvent(DownloadEvent.Finish event) {
-
+        refreshTask(event.taskId);
     }
 
     @Subscribe
     public void onCanceledEvent(DownloadEvent.Canceled event) {
+        refreshTask(event.taskId);
+    }
 
+    private void refreshTask(int taskId) {
+        TaskAccessor task = findTaskById(taskId);
+        if (task != null) {
+            task.copyFrom(TaskManager.getInstance().getAccessor(taskId));
+            mListAdapter.notifyItemChanged(mAccessorList.indexOf(task));
+        }
     }
 
     @Override
@@ -119,6 +132,16 @@ public class TaskListActivity extends Activity implements ITaskListView {
         mListAdapter.notifyDataSetChanged();
     }
 
+    private TaskAccessor findTaskById(int taskId) {
+        for (int i = 0; i < mAccessorList.size(); ++i) {
+            TaskAccessor task = mAccessorList.get(i);
+            if (task.info.id == taskId) {
+                return task;
+            }
+        }
+        return null;
+    }
+
     class DownloadListAdapter extends RecyclerView.Adapter<DownloadItemHolder> {
 
         @Override
@@ -130,7 +153,21 @@ public class TaskListActivity extends Activity implements ITaskListView {
         public void onBindViewHolder(DownloadItemHolder holder, int position) {
             TaskAccessor taskAccessor = mAccessorList.get(position);
             holder.mItemTitle.setText(taskAccessor.info.title);
-            holder.mItemProgress.setProgress((int) (100 * taskAccessor.info.downloadedSize / taskAccessor.info.totalSize));
+            if (taskAccessor.status == TaskAccessor.PROCESSING) {
+                holder.mItemProgress.setIndeterminate(true);
+                holder.itemView.setClickable(true);
+            } else if (taskAccessor.status == TaskAccessor.DISABLED) {
+                holder.mItemProgress.setIndeterminate(true);
+                holder.itemView.setClickable(false);
+            } else {
+                holder.mItemProgress.setIndeterminate(false);
+                holder.itemView.setClickable(true);
+                if (taskAccessor.info.totalSize != 0) {
+                    holder.mItemProgress.setProgress((int) (100 * taskAccessor.info.downloadedSize / taskAccessor.info.totalSize));
+                } else {
+                    holder.mItemProgress.setProgress(0);
+                }
+            }
             holder.mItemStatus.setText(taskAccessor.statusToString());
             holder.mItemSpeed.setText(""); // TODO: 2016/2/8 add speed support
         }
@@ -156,14 +193,45 @@ public class TaskListActivity extends Activity implements ITaskListView {
 
         public DownloadItemHolder(View itemView) {
             super(itemView);
-            ButterKnife.bind(itemView);
+            ButterKnife.bind(this, itemView);
             itemView.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View v) {
-            TaskAccessor task = mAccessorList.get(getAdapterPosition());
+            int position = getAdapterPosition();
+            TaskAccessor task = mAccessorList.get(position);
+            if (task.status == TaskAccessor.DOWNLOADING
+                    || task.status == TaskAccessor.WAIT
+                    || task.status == TaskAccessor.PROCESSING) {
+                TaskManager.getInstance().cancel(task.info.id);
+                mListAdapter.notifyItemChanged(position);
+            } else if (task.status == TaskAccessor.FINISH || task.status == TaskAccessor.DISABLED) {
+                // do nothing
+            } else {
+                Bundle extra = new Bundle();
+                extra.putInt(DownloadService.BUNDLE_ACTION, DownloadService.ACTION_RESUME_TASK);
+                extra.putInt(DownloadService.BUNDLE_TASK_ID, task.info.id);
+                startService(new Intent(TaskListActivity.this, DownloadService.class).putExtras(extra));
+            }
+        }
+    }
 
+    class DefaultItemDecoration extends RecyclerView.ItemDecoration {
+        private Drawable mDividerDrawable;
+
+        public DefaultItemDecoration() {
+            mDividerDrawable = ResourcesCompat.getDrawable(getResources(), R.color.colorPrimary, getTheme());
+        }
+
+        @Override
+        public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
+            int count = parent.getChildCount();
+            for (int i = 0; i < count; ++i) {
+                View child = parent.getChildAt(i);
+                mDividerDrawable.setBounds(0, child.getBottom(), parent.getWidth(), child.getBottom() + 2);
+                mDividerDrawable.draw(c);
+            }
         }
     }
 }

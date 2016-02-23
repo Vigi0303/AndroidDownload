@@ -5,6 +5,7 @@ handle net exception
 custom time out stuff
 DAO
 make file name tmp until download completed
+replace all disk operation to another thread like TaskManager
 
 
 recvfrom failed: ECONNRESET (Connection reset by peer)

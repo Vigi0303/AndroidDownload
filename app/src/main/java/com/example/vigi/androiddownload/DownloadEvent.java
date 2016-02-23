@@ -15,48 +15,48 @@ public class DownloadEvent {
         }
     }
     public static class DisPatched {
-        public DownloadRequest request;
+        public int taskId;
 
-        public DisPatched(DownloadRequest request) {
-            this.request = request;
+        public DisPatched(int taskId) {
+            this.taskId = taskId;
         }
     }
 
     public static class ReadLength {
-        public DownloadRequest request;
+        public int taskId;
         public long totalBytes;
 
-        public ReadLength(DownloadRequest request, long totalBytes) {
-            this.request = request;
+        public ReadLength(int taskId, long totalBytes) {
+            this.taskId = taskId;
             this.totalBytes = totalBytes;
         }
     }
 
     public static class Loading {
-        public DownloadRequest request;
+        public int taskId;
         public long currBytes;
 
-        public Loading(DownloadRequest request, long currBytes) {
-            this.request = request;
+        public Loading(int taskId, long currBytes) {
+            this.taskId = taskId;
             this.currBytes = currBytes;
         }
     }
 
     public static class Finish {
-        public DownloadRequest request;
+        public int taskId;
         public DownloadResult result;
 
-        public Finish(DownloadRequest request, DownloadResult result) {
-            this.request = request;
+        public Finish(int taskId, DownloadResult result) {
+            this.taskId = taskId;
             this.result = result;
         }
     }
 
     public static class Canceled {
-        public DownloadRequest request;
+        public int taskId;
 
-        public Canceled(DownloadRequest request) {
-            this.request = request;
+        public Canceled(int taskId) {
+            this.taskId = taskId;
         }
     }
 }
