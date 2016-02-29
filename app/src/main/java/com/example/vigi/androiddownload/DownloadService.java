@@ -191,7 +191,9 @@ public class DownloadService extends Service {
 
         @Override
         protected void onLoading(long downloadedBytes) {
-            mTask.status = TaskAccessor.DOWNLOADING;
+            if (!isCancel()) {
+                mTask.status = TaskAccessor.DOWNLOADING;
+            }
             mTask.info.downloadedSize = downloadedBytes;
 //            mTask.syncInfoFile();          // this action is invoked too often and may cause IO crowding
             postEventOnMainThread(new DownloadEvent.Loading(mTask.info.id, downloadedBytes));

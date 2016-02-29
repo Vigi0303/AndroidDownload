@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.ProtocolException;
 import java.net.SocketException;
 
 /**
@@ -83,6 +84,8 @@ public class DownloadWorker {
                 if (e instanceof IOException) {
                     if (e instanceof SocketException) {
                         error = new DownloadException(DownloadException.NO_CONNECTION, e);
+                    } else if (e instanceof ProtocolException) {
+                        error = new DownloadException(DownloadException.UNKNOWN_NETWORK, e);
                     } else {
                         error = new DownloadException(DownloadException.UNKNOWN, e);
                     }
@@ -106,17 +109,17 @@ public class DownloadWorker {
                     LogHelper.logError("some one kill me!!", e);
                 }
             } finally {
-                mDelivery.postLoading(mDownloadRequest, downloadedBytes);
                 if (response != null) {
                     response.disconnect();
                 }
+                mDelivery.postLoading(mDownloadRequest, downloadedBytes);
                 try {
-                    if (bis != null) {
-                        bis.close();
-                    }
                     if (bos != null) {
                         bos.flush();
                         bos.close();
+                    }
+                    if (bis != null) {
+                        bis.close();
                     }
                 } catch (IOException e) {
                     LogHelper.logError("unknown error", e);
