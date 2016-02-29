@@ -22,8 +22,8 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
     private String mUserAgent;
 
 
-    public UrlConnectionPerformer(String userAgent) {
-        this(userAgent, null);
+    public UrlConnectionPerformer() {
+        this(null, null);
     }
 
     public UrlConnectionPerformer(String userAgent, SSLSocketFactory sslSocketFactory) {
@@ -47,7 +47,9 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                     ((HttpsURLConnection) connection).setSSLSocketFactory(mSslSocketFactory);
                 }
                 connection.setRequestMethod("GET");
-                connection.setRequestProperty("User-Agent", mUserAgent);
+                if (!TextUtils.isEmpty(mUserAgent)) {
+                    connection.setRequestProperty("User-Agent", mUserAgent);
+                }
                 connection.setRequestProperty("connection", "close");
                 if (range != 0) {
                     connection.setRequestProperty("Range", "bytes=" + range + "-");
@@ -60,7 +62,9 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                 UrlConnectionResponse hcr = new UrlConnectionResponse(connection);
                 int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-                    request.setRedirectUrl(connection.getHeaderField("Location"));
+                    String redirectUrl = connection.getHeaderField("Location");
+                    request.setRedirectUrl(redirectUrl);
+                    LogHelper.logError("request(" + urlStr + ") redirect to \"" + redirectUrl + "\"");
                     continue;
                 }
                 if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {

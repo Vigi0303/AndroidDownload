@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by Vigi on 2016/1/20.
  */
 public class DownloadManager {
-    private static final String DEFAULT_USER_AGENT = "AndroidDownload / 1.0";   // TODO: 2016/1/26 to be confirmed
     private static AtomicInteger SequenceGenerator = new AtomicInteger(0);
     private NetWorkPerformer mNetWorkPerformer;
     private DownloadDispatcher mDispatcher;
@@ -29,7 +28,7 @@ public class DownloadManager {
      */
     public DownloadManager(NetWorkPerformer netWorkPerformer, DownloadDelivery delivery) {
         if (netWorkPerformer == null) {
-            mNetWorkPerformer = new UrlConnectionPerformer(DEFAULT_USER_AGENT);
+            mNetWorkPerformer = new UrlConnectionPerformer();
         } else {
             mNetWorkPerformer = netWorkPerformer;
         }

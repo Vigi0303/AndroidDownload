@@ -116,6 +116,7 @@ public class DownloadService extends Service {
         File targetFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), guessName);
         File infoJsonFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), TaskManager.INFO_FILE_NAME);
         TaskAccessor task = new TaskAccessor(infoJsonFile);
+        task.info.id = url.hashCode();
         DownloadRequest request = new DownloadRequestImpl(url, targetFile, 0, task);
         request.setTimeOut(10000);  // 10s to debug
         TaskManager.getInstance().addRequest(request, task);

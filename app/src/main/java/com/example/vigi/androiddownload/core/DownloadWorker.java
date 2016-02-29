@@ -101,7 +101,7 @@ public class DownloadWorker {
                         retryCount += 1;
                         continue;
                     }
-                    LogHelper.logError("I give up ... for wait " + waitMs + "ms");
+                    LogHelper.logError("I give up ... for wait " + waitMs + "ms", e);
                 } else {
                     LogHelper.logError("some one kill me!!", e);
                 }
@@ -132,11 +132,11 @@ public class DownloadWorker {
                 RandomAccessFile raf = new RandomAccessFile(file, "rw");
                 raf.setLength(fileLength);
                 raf.close();
-                return new BufferedOutputStream(new FileOutputStream(file));
+                return new FileOutputStream(file);
             }
             RandomAccessFile raf = new RandomAccessFile(file, "rw");
             raf.seek(startPos);
-            return new BufferedOutputStream(new FileOutputStream(raf.getFD()));
+            return new FileOutputStream(raf.getFD());
         } catch (IOException e) {
             throw new DownloadException(DownloadException.LOCAL_IO, e);
         }
