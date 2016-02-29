@@ -128,13 +128,8 @@ public class DownloadWorker {
 
     private OutputStream generateWriteStream(File file, long fileLength, long startPos) throws DownloadException {
         try {
-            if (!file.exists() && startPos == 0) {
-                RandomAccessFile raf = new RandomAccessFile(file, "rw");
-                raf.setLength(fileLength);
-                raf.close();
-                return new FileOutputStream(file);
-            }
             RandomAccessFile raf = new RandomAccessFile(file, "rw");
+            raf.setLength(fileLength);
             raf.seek(startPos);
             return new FileOutputStream(raf.getFD());
         } catch (IOException e) {
