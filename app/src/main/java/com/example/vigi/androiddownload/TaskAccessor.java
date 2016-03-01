@@ -22,6 +22,10 @@ public class TaskAccessor {
     public static final int DISABLED = 7;   // disable status to keep it atomic
 
     public TaskAccessor(File infoJsonFile) {
+        this(infoJsonFile, 0);
+    }
+
+    public TaskAccessor(File infoJsonFile, int taskId) {
         mInfoJsonFile = infoJsonFile;
         if (infoJsonFile.exists()) {
             FileReader reader = null;
@@ -48,6 +52,9 @@ public class TaskAccessor {
         }
         if (info == null) {
             info = new TaskInfoObject();
+            if (taskId != 0) {
+                info.id = taskId;
+            }
         }
         if (info.isCompleted) {
             status = FINISH;

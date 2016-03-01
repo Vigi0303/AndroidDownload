@@ -19,6 +19,7 @@ public class TaskInfoObject {
     public String fileName;
 
     public TaskInfoObject() {
+        id = 0;
         isCompleted = false;
     }
 

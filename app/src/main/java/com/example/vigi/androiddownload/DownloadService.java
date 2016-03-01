@@ -111,11 +111,11 @@ public class DownloadService extends Service {
     private void addNewTask(String url) {
         int guessEnd = url.lastIndexOf("?");
         String guessName = url.substring(url.lastIndexOf("/") + 1, guessEnd == -1 ? url.length() : guessEnd);
-        String hashStr = String.valueOf(url.hashCode());
+        int urlHash = url.hashCode();
+        String hashStr = String.valueOf(urlHash);
         File targetFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), guessName);
         File infoJsonFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), TaskManager.INFO_FILE_NAME);
-        TaskAccessor task = new TaskAccessor(infoJsonFile);
-        task.info.id = url.hashCode();
+        TaskAccessor task = new TaskAccessor(infoJsonFile, urlHash);
         DownloadRequest request = new DownloadRequestImpl(url, targetFile, 0, task);
         request.setTimeOut(10000);  // 10s to debug
         TaskManager.getInstance().addRequest(request, task);

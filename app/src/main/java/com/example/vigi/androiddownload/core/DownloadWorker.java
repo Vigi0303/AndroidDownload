@@ -44,19 +44,22 @@ public class DownloadWorker {
                     return null;
                 }
                 LogHelper.logError("I am performing~");
-                response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest, mDownloadRequest.getStartPos() + downloadedBytes);
+                long rangeBytes = mDownloadRequest.getStartPos() + downloadedBytes;
+                response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest, rangeBytes);
                 timeMsRecord = SystemClock.elapsedRealtime();
                 if (mDownloadRequest.isCancel()) {
                     return null;
                 }
                 validateServerData(mDownloadRequest, response);
-                if (!response.supportRange) {
-                    mDownloadRequest.setStartPos(0);
-                    downloadedBytes = 0;
-                }
                 mDelivery.postTotalLength(mDownloadRequest, response.totalLength);
 
                 File targetFile = mDownloadRequest.getTargetFile();
+                if (rangeBytes > 0) {
+                    if (!response.supportRange) {
+                        mDownloadRequest.setStartPos(0);
+                        downloadedBytes = 0;
+                    }
+                }
                 bis = new BufferedInputStream(response.contentStream);
                 bos = new CustomOutputStream(generateWriteStream(targetFile, response.totalLength, mDownloadRequest.getStartPos()));
                 byte[] bytesTmp = new byte[STREAM_BUFFER];
@@ -71,7 +74,7 @@ public class DownloadWorker {
                     if (currTime - lastTimeMs >= mDownloadRequest.getRate()) {
                         lastTimeMs = currTime;
                         mDelivery.postLoading(mDownloadRequest, downloadedBytes);
-                        LogHelper.logError("I receive " + bytesLen + " and downloaded " + downloadedBytes + " :)");
+                        LogHelper.logError("I receive and downloaded " + downloadedBytes + " :)");
                     }
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
@@ -107,7 +110,7 @@ public class DownloadWorker {
                         retryCount += 1;
                         continue;
                     }
-                    LogHelper.logError("I give up ... for wait " + waitMs + "ms", e);
+                    LogHelper.logError("I give up ... for wait " + waitMs + "ms");
                 } else {
                     LogHelper.logError("some one kill me!!", e);
                 }
