@@ -88,7 +88,6 @@ public class TasksHolder {
         if (request != null) {
             request.cancel();
         }
-        mRequestInSession.remove(taskId);
         TaskAccessor task = mAllTaskAccessor.get(taskId);
         if (task != null) {
             task.status = TaskAccessor.DISABLED;
@@ -99,6 +98,15 @@ public class TasksHolder {
 
     public TaskAccessor getAccessor(int taskId) {
         return mAllTaskAccessor.get(taskId);
+    }
+
+    public void removeAccessor(int taskId) {
+        TaskAccessor accessor = mAllTaskAccessor.get(taskId);
+        if (accessor == null) {
+            return;
+        }
+        mAllTaskAccessor.remove(taskId);
+        accessor.deleteInfoFile();
     }
 
     public DownloadRequest getRequest(int taskId) {

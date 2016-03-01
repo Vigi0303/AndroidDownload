@@ -117,4 +117,11 @@ public class TaskAccessor {
         }
         return false;
     }
+
+    public void deleteInfoFile() {
+        if (mInfoJsonFile.exists()) {
+            File parentFile = mInfoJsonFile.getParentFile();
+            Utils.deleteQuietly(parentFile);
+        }
+    }
 }

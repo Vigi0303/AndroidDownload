@@ -144,7 +144,30 @@ public class DownloadService extends Service {
     }
 
     private void deleteTask(TaskAccessor task) {
-        // TODO: 2016/3/1 delete task
+        final int taskId = task.info.id;
+        DownloadRequest request = TasksHolder.getInstance().getRequest(taskId);
+        if (request != null) {
+            request.clearRequestListeners();
+            if (!request.isCancel()) {
+                TasksHolder.getInstance().cancel(taskId);
+                request.addRequestListener(new SimpleRequestListener() {
+                    @Override
+                    public void onFinish(DownloadResult result) {
+                        delete();
+                    }
+
+                    @Override
+                    public void onCanceled() {
+                        delete();
+                    }
+
+                    private void delete() {
+                        TasksHolder.getInstance().removeAccessor(taskId);
+                    }
+                });
+            }
+        }
+        TasksHolder.getInstance().removeAccessor(taskId);
     }
 
     private void postEventOnMainThread(Object event) {
@@ -224,6 +247,39 @@ public class DownloadService extends Service {
             mTask.syncInfoFile();
             TasksHolder.getInstance().removeRequest(mTask.info.id);
             postEventOnMainThread(new DownloadEvent.Canceled(mTask.info.id));
+        }
+    }
+
+    abstract class SimpleRequestListener implements DownloadRequest.RequestListener {
+
+        @Override
+        public void onCreate() {
+
+        }
+
+        @Override
+        public void onDispatched() {
+
+        }
+
+        @Override
+        public void onReadLength(long totalBytes) {
+
+        }
+
+        @Override
+        public void onLoading(long downloadedBytes) {
+
+        }
+
+        @Override
+        public void onFinish(DownloadResult result) {
+
+        }
+
+        @Override
+        public void onCanceled() {
+
         }
     }
 }
