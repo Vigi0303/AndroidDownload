@@ -104,6 +104,7 @@ public class TaskAccessor {
         FileWriter writer = null;
         try {
             if (!mInfoJsonFile.exists()) {
+                // TODO: 2016/3/1  cannot create file after we delete at file explorer and why?
                 mInfoJsonFile.createNewFile();
             }
             writer = new FileWriter(mInfoJsonFile, false);
