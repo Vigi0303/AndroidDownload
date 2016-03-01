@@ -4,11 +4,13 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Vigi on 2016/1/27.
  */
-public class DownloadRequest implements Comparable<DownloadRequest> {
+public final class DownloadRequest implements Comparable<DownloadRequest> {
     private static final int DEFAULT_RATE_MS = 1000;
     private int mSequence = 0;
     private String mOriginalUrl;
@@ -21,6 +23,7 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     private int mTimeOut = 0;
     private int mRate = DEFAULT_RATE_MS;
     private DownloadResult mResult;
+    private List<RequestListener> mRequestListeners;
 
     public DownloadRequest(@NonNull String urlStr, @NonNull File file) {
         this(urlStr, file, 0);
@@ -112,7 +115,7 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
 
     /**
      * cancel request and it cannot reuse any more
-     * <p>It doesn't take effect immediately until {@link #onCanceled()} reached</p>
+     * <p>It doesn't take effect immediately until {@link RequestListener#onCanceled()} reached</p>
      */
     public void cancel() {
         mCancel = true;
@@ -127,43 +130,94 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
         return this.mSequence - another.mSequence;
     }
 
-    protected void onCreate() {
+    public void addRequestListener(RequestListener listener) {
+        if (mRequestListeners == null) {
+            mRequestListeners = new ArrayList<>();
+        }
+        mRequestListeners.add(listener);
+    }
 
+    public void clearRequestListeners() {
+        if (mRequestListeners != null) {
+            mRequestListeners.clear();
+        }
+    }
+
+    protected void onCreate() {
+        if (mRequestListeners != null) {
+            for (int i = 0; i < mRequestListeners.size(); ++i) {
+                mRequestListeners.get(i).onCreate();
+            }
+        }
     }
 
     protected void onDispatched() {
-
+        if (mRequestListeners != null) {
+            for (int i = 0; i < mRequestListeners.size(); ++i) {
+                mRequestListeners.get(i).onDispatched();
+            }
+        }
     }
 
-    /**
-     * call back when server return "Content-Length" in time.
-     * <p>You can also get it by {@link #getTotalBytes()} later</p>
-     */
     protected void onReadLength(long totalBytes) {
-
+        if (mRequestListeners != null) {
+            for (int i = 0; i < mRequestListeners.size(); ++i) {
+                mRequestListeners.get(i).onReadLength(totalBytes);
+            }
+        }
     }
 
-    /**
-     * call back when task finish.
-     * <p>include success, error and thread interruption</p>
-     * <p>error in {@link DownloadRequest} has a constant code list in {@link DownloadException}</p>
-     */
-    protected void onFinish(DownloadResult result) {
-
-    }
-
-    /**
-     * call back when task is downloading.
-     * <p>You can custom the frequency by {@link #setRate(int)}</p>
-     */
     protected void onLoading(long downloadedBytes) {
-
+        if (mRequestListeners != null) {
+            for (int i = 0; i < mRequestListeners.size(); ++i) {
+                mRequestListeners.get(i).onLoading(downloadedBytes);
+            }
+        }
     }
 
-    /**
-     * call back when task is canceled by invoke {@link #cancel()}
-     */
-    protected void onCanceled() {
+    protected void onFinish(DownloadResult result) {
+        if (mRequestListeners != null) {
+            for (int i = 0; i < mRequestListeners.size(); ++i) {
+                mRequestListeners.get(i).onFinish(result);
+            }
+        }
+    }
 
+    protected void onCanceled() {
+        if (mRequestListeners != null) {
+            for (int i = 0; i < mRequestListeners.size(); ++i) {
+                mRequestListeners.get(i).onCanceled();
+            }
+        }
+    }
+
+    public interface RequestListener {
+        void onCreate();
+
+        void onDispatched();
+
+        /**
+         * call back when server return "Content-Length" in time.
+         * <p>You can also get it by {@link #getTotalBytes()} later</p>
+         */
+        void onReadLength(long totalBytes);
+
+        /**
+         * call back when task is downloading.
+         * <p>You can custom the frequency by {@link #setRate(int)}</p>
+         */
+        void onLoading(long downloadedBytes);
+
+        /**
+         * call back when task finish.
+         * <p>include success, error and thread interruption</p>
+         * <p>error in {@link DownloadRequest} has a constant code list in {@link DownloadException}</p>
+         */
+        void onFinish(DownloadResult result);
+
+        /**
+         * call back when task is canceled by invoke {@link #cancel()}
+         */
+        void onCanceled();
     }
 }

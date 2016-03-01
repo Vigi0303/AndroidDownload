@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
@@ -76,7 +75,7 @@ public class DownloadService extends Service {
                 if (taskId == -1) {
                     return START_NOT_STICKY;
                 }
-                TaskAccessor task = TaskManager.getInstance().getAccessor(taskId);
+                TaskAccessor task = TasksHolder.getInstance().getAccessor(taskId);
                 if (task == null) {
                     return START_NOT_STICKY;
                 }
@@ -96,7 +95,7 @@ public class DownloadService extends Service {
                 if (taskId == -1) {
                     return START_NOT_STICKY;
                 }
-                TaskAccessor task = TaskManager.getInstance().getAccessor(taskId);
+                TaskAccessor task = TasksHolder.getInstance().getAccessor(taskId);
                 if (task == null) {
                     return START_NOT_STICKY;
                 }
@@ -115,18 +114,19 @@ public class DownloadService extends Service {
         String guessName = url.substring(url.lastIndexOf("/") + 1, guessEnd == -1 ? url.length() : guessEnd);
         int urlHash = url.hashCode();
         String hashStr = String.valueOf(urlHash);
-        File targetFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), guessName);
-        File infoJsonFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), TaskManager.INFO_FILE_NAME);
+        File targetFile = new File(getExternalFilesDir(TasksHolder.DOWNLOAD_DIR + File.separator + hashStr), guessName);
+        File infoJsonFile = new File(getExternalFilesDir(TasksHolder.DOWNLOAD_DIR + File.separator + hashStr), TasksHolder.INFO_FILE_NAME);
         TaskAccessor task = new TaskAccessor(infoJsonFile, urlHash);
-        DownloadRequest request = new DownloadRequestImpl(url, targetFile, 0, task);
-        request.setTimeOut(10000);  // 10s to debug
-        TaskManager.getInstance().addRequest(request, task);
+        DownloadRequest request = new DownloadRequest(url, targetFile, 0);
+        request.setTimeOut(10000);
+        request.addRequestListener(new RequestListenerImpl(task, request));
+        TasksHolder.getInstance().addRequest(request, task);
         mDownloadManager.addDownload(request);
     }
 
     private void resumeTask(TaskAccessor task) {
         String hashStr = String.valueOf(task.info.url.hashCode());
-        File targetFile = new File(getExternalFilesDir(TaskManager.DOWNLOAD_DIR + File.separator + hashStr), task.info.fileName);
+        File targetFile = new File(getExternalFilesDir(TasksHolder.DOWNLOAD_DIR + File.separator + hashStr), task.info.fileName);
         // continue from last position if we have
         long downloadedSize = 0;
         if (targetFile.exists()) {
@@ -134,16 +134,17 @@ public class DownloadService extends Service {
                 downloadedSize = task.info.downloadedSize;
             }
         }
-        DownloadRequest request = new DownloadRequestImpl(
-                task.info.url, targetFile, downloadedSize, task
+        DownloadRequest request = new DownloadRequest(
+                task.info.url, targetFile, downloadedSize
         );
-        request.setTimeOut(10000);  // 10s to debug
+        request.setTimeOut(10000);
+        request.addRequestListener(new RequestListenerImpl(task, request));
         mDownloadManager.addDownload(request);
-        TaskManager.getInstance().addRequest(request, task);
+        TasksHolder.getInstance().addRequest(request, task);
     }
 
     private void deleteTask(TaskAccessor task) {
-        // TODO: 2016/3/1 delete task 
+        // TODO: 2016/3/1 delete task
     }
 
     private void postEventOnMainThread(Object event) {
@@ -155,47 +156,47 @@ public class DownloadService extends Service {
         mDownloadManager.stop();
     }
 
-    class DownloadRequestImpl extends DownloadRequest {
+    class RequestListenerImpl implements DownloadRequest.RequestListener {
         private final TaskAccessor mTask;
+        private final DownloadRequest mDownloadRequest;
 
-        public DownloadRequestImpl(@NonNull String urlStr, @NonNull File file,
-                                   long startPos, TaskAccessor accessor) {
-            super(urlStr, file, startPos);
-            mTask = accessor;
+        RequestListenerImpl(TaskAccessor task, DownloadRequest downloadRequest) {
+            mTask = task;
+            mDownloadRequest = downloadRequest;
         }
 
         @Override
-        protected void onCreate() {
+        public void onCreate() {
             mTask.status = TaskAccessor.WAIT;
-            mTask.info.id = getOriginalUrl().hashCode();
-            mTask.info.url = getOriginalUrl();
-            mTask.info.fileName = getTargetFile().getName();
-            mTask.info.downloadedSize = getCurrentBytes();
+            mTask.info.id = mDownloadRequest.getOriginalUrl().hashCode();
+            mTask.info.url = mDownloadRequest.getOriginalUrl();
+            mTask.info.fileName = mDownloadRequest.getTargetFile().getName();
+            mTask.info.downloadedSize = mDownloadRequest.getCurrentBytes();
             if (mTask.info.createTime == 0) {
                 mTask.info.createTime = System.currentTimeMillis();
             }
-            mTask.info.title = getOriginalUrl();
+            mTask.info.title = mDownloadRequest.getOriginalUrl();
             mTask.info.isCompleted = false;
             mTask.syncInfoFile();
-            postEventOnMainThread(new DownloadEvent.Create(this));
+            postEventOnMainThread(new DownloadEvent.Create(mDownloadRequest));
         }
 
         @Override
-        protected void onDispatched() {
+        public void onDispatched() {
             mTask.status = TaskAccessor.PROCESSING;
             postEventOnMainThread(new DownloadEvent.DisPatched(mTask.info.id));
         }
 
         @Override
-        protected void onReadLength(long totalBytes) {
+        public void onReadLength(long totalBytes) {
             mTask.info.totalSize = totalBytes;
             mTask.syncInfoFile();
             postEventOnMainThread(new DownloadEvent.ReadLength(mTask.info.id, totalBytes));
         }
 
         @Override
-        protected void onLoading(long downloadedBytes) {
-            if (!isCancel()) {
+        public void onLoading(long downloadedBytes) {
+            if (!mDownloadRequest.isCancel()) {
                 mTask.status = TaskAccessor.DOWNLOADING;
             }
             mTask.info.downloadedSize = downloadedBytes;
@@ -204,7 +205,7 @@ public class DownloadService extends Service {
         }
 
         @Override
-        protected void onFinish(DownloadResult result) {
+        public void onFinish(DownloadResult result) {
             if (result.isSuccess()) {
                 mTask.status = TaskAccessor.FINISH;
                 mTask.info.isCompleted = true;
@@ -213,15 +214,15 @@ public class DownloadService extends Service {
                 mTask.status = TaskAccessor.ERROR;
             }
             mTask.syncInfoFile();
-            TaskManager.getInstance().removeRequest(mTask.info.id);
+            TasksHolder.getInstance().removeRequest(mTask.info.id);
             postEventOnMainThread(new DownloadEvent.Finish(mTask.info.id, result));
         }
 
         @Override
-        protected void onCanceled() {
+        public void onCanceled() {
             mTask.status = TaskAccessor.IDLE;
             mTask.syncInfoFile();
-            TaskManager.getInstance().removeRequest(mTask.info.id);
+            TasksHolder.getInstance().removeRequest(mTask.info.id);
             postEventOnMainThread(new DownloadEvent.Canceled(mTask.info.id));
         }
     }

@@ -13,6 +13,6 @@ public class DownloadApplication extends Application {
     public void onCreate() {
         super.onCreate();
         Logger.init();
-        TaskManager.getInstance().initLoadAccessors(this);
+        TasksHolder.getInstance().initLoadAccessors(this);
     }
 }

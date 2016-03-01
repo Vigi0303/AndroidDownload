@@ -18,24 +18,24 @@ import java.util.List;
  * <p/>
  * Created by Vigi on 2016/2/8.
  */
-public class TaskManager {
+public class TasksHolder {
     public static final String DOWNLOAD_DIR = "download";
     public static final String INFO_FILE_NAME = "info.json";
 
-    private static TaskManager ourInstance;
+    private static TasksHolder ourInstance;
 
-    public static TaskManager getInstance() {
+    public static TasksHolder getInstance() {
         if (ourInstance == null) {
-            synchronized (TaskManager.class) {
+            synchronized (TasksHolder.class) {
                 if (ourInstance == null) {
-                    ourInstance = new TaskManager();
+                    ourInstance = new TasksHolder();
                 }
             }
         }
         return ourInstance;
     }
 
-    private TaskManager() {
+    private TasksHolder() {
         mRequestInSession = new SparseArray<>();
         mAllTaskAccessor = new SparseArray<>();
     }

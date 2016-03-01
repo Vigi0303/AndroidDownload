@@ -124,7 +124,7 @@ public class TaskListActivity extends AppCompatActivity implements ITaskListView
     private void refreshTask(int taskId) {
         TaskAccessor task = findTaskById(taskId);
         if (task != null) {
-            task.copyFrom(TaskManager.getInstance().getAccessor(taskId));
+            task.copyFrom(TasksHolder.getInstance().getAccessor(taskId));
             mListAdapter.notifyItemChanged(mAccessorList.indexOf(task));
         }
     }
@@ -226,7 +226,7 @@ public class TaskListActivity extends AppCompatActivity implements ITaskListView
             if (task.status == TaskAccessor.DOWNLOADING
                     || task.status == TaskAccessor.WAIT
                     || task.status == TaskAccessor.PROCESSING) {
-                TaskManager.getInstance().cancel(task.info.id);
+                TasksHolder.getInstance().cancel(task.info.id);
                 mListAdapter.notifyItemChanged(position);
             } else if (task.status == TaskAccessor.FINISH || task.status == TaskAccessor.DISABLED) {
                 // do nothing

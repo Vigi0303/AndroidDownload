@@ -1,7 +1,7 @@
 package com.example.vigi.androiddownload.presenter;
 
 import com.example.vigi.androiddownload.TaskAccessor;
-import com.example.vigi.androiddownload.TaskManager;
+import com.example.vigi.androiddownload.TasksHolder;
 import com.example.vigi.androiddownload.view.ITaskListView;
 
 import java.util.List;
@@ -18,7 +18,7 @@ public class TaskListPresenter {
 
     public void requestTaskList() {
         mTaskListView.showLoading();
-        List<TaskAccessor> allTask = TaskManager.getInstance().getAllTaskAccessor();
+        List<TaskAccessor> allTask = TasksHolder.getInstance().getAllTaskAccessor();
         if (allTask.isEmpty()) {
             mTaskListView.showEmpty();
         } else {
