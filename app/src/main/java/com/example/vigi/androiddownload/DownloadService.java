@@ -3,16 +3,13 @@ package com.example.vigi.androiddownload;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.example.vigi.androiddownload.core.DownloadDelivery;
 import com.example.vigi.androiddownload.core.DownloadManager;
 import com.example.vigi.androiddownload.core.DownloadRequest;
 import com.example.vigi.androiddownload.core.DownloadResult;
@@ -34,7 +31,6 @@ public class DownloadService extends Service {
     public static final int ACTION_RESUME_TASK = 0x0104;
     public static final int ACTION_STOP_ALL = 0x0105;
 
-    private HandlerThread mDAOThread;
     private DownloadManager mDownloadManager;
     private Handler mUIHandler;
 
@@ -46,9 +42,7 @@ public class DownloadService extends Service {
 
     @Override
     public void onCreate() {
-        mDAOThread = new HandlerThread("mDAOThread", Process.THREAD_PRIORITY_BACKGROUND);
-        mDAOThread.start();
-        mDownloadManager = new DownloadManager(null, new DownloadDelivery(mDAOThread.getLooper()));
+        mDownloadManager = new DownloadManager();
         mUIHandler = new Handler(new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
@@ -146,7 +140,6 @@ public class DownloadService extends Service {
 
     @Override
     public void onDestroy() {
-        mDAOThread.quit();
         mDownloadManager.stop();
     }
 
