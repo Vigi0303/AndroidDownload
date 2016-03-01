@@ -59,7 +59,7 @@ public class DownloadService extends Service {
                 return false;
             }
         });
-        TaskManager.getInstance();
+        TaskManager.getInstance().initLoadAccessors(this);
     }
 
     @Override

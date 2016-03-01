@@ -40,6 +40,9 @@ public class DownloadWorker {
             NetWorkResponse response = null;
             DownloadException error = null;
             try {
+                if (mDownloadRequest.isCancel()) {
+                    return null;
+                }
                 LogHelper.logError("I am performing~");
                 response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest, mDownloadRequest.getStartPos() + downloadedBytes);
                 timeMsRecord = SystemClock.elapsedRealtime();

@@ -1,5 +1,6 @@
 package com.example.vigi.androiddownload;
 
+import android.app.Service;
 import android.util.SparseArray;
 
 import com.example.vigi.androiddownload.core.DownloadRequest;
@@ -12,6 +13,7 @@ import java.util.List;
 
 /**
  * A container of {@link TaskAccessor} and {@link DownloadRequest} in work queue.
+ * <p>must initialize by {@link #initLoadAccessors(Service)} in {@link Service#onCreate()}</p>
  * <p/>
  * Created by Vigi on 2016/2/8.
  */
@@ -35,15 +37,18 @@ public class TaskManager {
     private TaskManager() {
         mRequestInSession = new SparseArray<>();
         mAllTaskAccessor = new SparseArray<>();
-        initLoadAccessors();
     }
 
     private SparseArray<DownloadRequest> mRequestInSession;
     private SparseArray<TaskAccessor> mAllTaskAccessor;
 
-    private void initLoadAccessors() {
-        DownloadApplication instance = DownloadApplication.getInstance();
-        File rootDir = instance.getExternalFilesDir(DOWNLOAD_DIR);
+    /**
+     * must initialize in {@link Service#onCreate()}
+     *
+     * @param context the service for downloading
+     */
+    public void initLoadAccessors(Service context) {
+        File rootDir = context.getExternalFilesDir(DOWNLOAD_DIR);
         if (rootDir == null) {
             throw new NullPointerException("can not find external storage");
         }
