@@ -49,7 +49,11 @@ public class TaskAccessor {
         if (info == null) {
             info = new TaskInfoObject();
         }
-        status = IDLE;
+        if (info.isCompleted) {
+            status = FINISH;
+        } else {
+            status = IDLE;
+        }
     }
 
     private final File mInfoJsonFile;

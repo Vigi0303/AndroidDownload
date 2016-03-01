@@ -18,6 +18,10 @@ public class TaskInfoObject {
     public long finishTime;
     public String fileName;
 
+    public TaskInfoObject() {
+        isCompleted = false;
+    }
+
     public void copyFrom(TaskInfoObject source) {
         if (source == this) {
             return;

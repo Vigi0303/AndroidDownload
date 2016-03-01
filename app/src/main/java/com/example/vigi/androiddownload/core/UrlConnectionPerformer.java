@@ -68,6 +68,10 @@ public class UrlConnectionPerformer implements NetWorkPerformer<UrlConnectionRes
                     continue;
                 }
                 if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {
+                    if (responseCode == 416) {
+                        throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE
+                                , "range error(server cannot accept this startPos, you may have finished downloading.)");
+                    }
                     throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE
                             , "url(" + request.getOriginalUrl() + ") return error statusCode(" + responseCode + ")");
                 }
