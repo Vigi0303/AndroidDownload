@@ -8,6 +8,7 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,17 +50,38 @@ public class TaskListActivity extends AppCompatActivity implements ITaskListView
 
         mPresenter = new TaskListPresenter(this);
         mListAdapter = new DownloadListAdapter();
+        ItemTouchHelper.Callback callback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                TaskAccessor taskToRemove = mAccessorList.get(position);
+                // remove on UI
+                mAccessorList.remove(position);
+                mListAdapter.notifyItemRemoved(position);
+                // remove on Data(process in background)
+                Bundle extra = new Bundle();
+                extra.putInt(DownloadService.BUNDLE_ACTION, DownloadService.ACTION_DELETE_TASK);
+                extra.putInt(DownloadService.BUNDLE_TASK_ID, taskToRemove.info.id);
+                startService(new Intent(TaskListActivity.this, DownloadService.class).putExtras(extra));
+            }
+        };
+
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.setAdapter(mListAdapter);
         mRecyclerView.addItemDecoration(new DefaultItemDecoration());
-
-        mPresenter.requestTaskList();
+        new ItemTouchHelper(callback).attachToRecyclerView(mRecyclerView);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         EventBus.getInstance().register(this);
+        mPresenter.requestTaskList();
     }
 
     @Override

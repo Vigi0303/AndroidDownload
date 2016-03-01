@@ -92,7 +92,15 @@ public class DownloadService extends Service {
                 break;
             }
             case ACTION_DELETE_TASK: {
-                // TODO: 2016/2/9 delete task
+                int taskId = intent.getIntExtra(BUNDLE_TASK_ID, -1);
+                if (taskId == -1) {
+                    return START_NOT_STICKY;
+                }
+                TaskAccessor task = TaskManager.getInstance().getAccessor(taskId);
+                if (task == null) {
+                    return START_NOT_STICKY;
+                }
+                deleteTask(task);
                 break;
             }
             default:
@@ -132,6 +140,10 @@ public class DownloadService extends Service {
         request.setTimeOut(10000);  // 10s to debug
         mDownloadManager.addDownload(request);
         TaskManager.getInstance().addRequest(request, task);
+    }
+
+    private void deleteTask(TaskAccessor task) {
+        // TODO: 2016/3/1 delete task 
     }
 
     private void postEventOnMainThread(Object event) {
