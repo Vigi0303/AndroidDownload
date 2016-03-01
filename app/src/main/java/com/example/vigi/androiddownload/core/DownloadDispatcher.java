@@ -11,7 +11,7 @@ public class DownloadDispatcher extends Thread {
     private BlockingQueue<DownloadRequest> mRequestQueue;
     private NetWorkPerformer mNetWorkPerformer;
     private DownloadDelivery mDelivery;
-    private volatile boolean mQuit = false;   // TODO: 2016/1/24 why volatile
+    private volatile boolean mQuit = false;
 
     public DownloadDispatcher(BlockingQueue<DownloadRequest> requestQueue
             , NetWorkPerformer netWorkPerformer, DownloadDelivery delivery) {

@@ -13,7 +13,7 @@ public class DownloadRequest implements Comparable<DownloadRequest> {
     private int mSequence = 0;
     private String mOriginalUrl;
     private String mRedirectUrl;
-    private boolean mCancel = false;
+    private volatile boolean mCancel = false;
     private File mTargetFile;
     private long mStartPos = 0;
     private long mDownloadedBytes = 0;
