@@ -18,6 +18,7 @@ public class MainActivity extends Activity {
             , "http://down.mumayi.com/41052/mbaidu"
             , "http://58.30.31.197/files2.genymotion.com/genymotion/genymotion-2.6.0/genymotion-2.6.0.exe"
             , "http://raw.githubusercontent.com/lgvalle/Material-Animations/master/screenshots/shared_element_anim.gif"
+            , "http://starumlreleases-7a0.kxcdn.com/v2.6.0/StarUML-v2.6.0.msi"
     };
 
     @Bind(R.id.download_url)
@@ -29,7 +30,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        mUrlText.setText(URLS[1]);
+        mUrlText.setText(URLS[4]);
     }
 
     @OnClick(R.id.add_to_download)

@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.ProtocolException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 /**
  * Created by Vigi on 2016/1/20.
@@ -51,7 +52,9 @@ public class DownloadWorker {
                     return null;
                 }
                 validateServerData(mDownloadRequest, response);
-                mDelivery.postTotalLength(mDownloadRequest, response.totalLength);
+                if (retryCount == 0) {
+                    mDelivery.postTotalLength(mDownloadRequest, response.totalLength);
+                }
 
                 File targetFile = mDownloadRequest.getTargetFile();
                 if (rangeBytes > 0) {
@@ -90,6 +93,8 @@ public class DownloadWorker {
                 if (e instanceof IOException) {
                     if (e instanceof SocketException) {
                         error = new DownloadException(DownloadException.NO_CONNECTION, e);
+                    } else if (e instanceof SocketTimeoutException) {
+                        error = new DownloadException(DownloadException.SOCKET_TIMEOUT, e);
                     } else if (e instanceof ProtocolException) {
                         error = new DownloadException(DownloadException.UNKNOWN_NETWORK, e);
                     } else {
