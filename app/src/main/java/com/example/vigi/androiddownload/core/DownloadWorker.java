@@ -32,7 +32,7 @@ public class DownloadWorker {
 
     public DownloadResult work() throws InterruptedException {
         long startTimeMs = SystemClock.elapsedRealtime();
-        long downloadedBytes = 0;
+        long downloadedBytes_work = 0;
         long timeMsRecord = startTimeMs;
         int retryCount = 0;
         while (true) {
@@ -40,12 +40,13 @@ public class DownloadWorker {
             CustomOutputStream bos = null;
             NetWorkResponse response = null;
             DownloadException error = null;
+            long downloadBytes_once = 0;
             try {
                 if (mDownloadRequest.isCancel()) {
                     return null;
                 }
                 LogHelper.logError("I am performing~");
-                long rangeBytes = mDownloadRequest.getStartPos() + downloadedBytes;
+                long rangeBytes = mDownloadRequest.getStartPos() + downloadedBytes_work;
                 response = mNetWorkPerformer.performDownloadRequest(mDownloadRequest, rangeBytes);
                 timeMsRecord = SystemClock.elapsedRealtime();
                 if (mDownloadRequest.isCancel()) {
@@ -60,22 +61,24 @@ public class DownloadWorker {
                 if (rangeBytes > 0) {
                     if (!response.supportRange) {
                         mDownloadRequest.setStartPos(0);
-                        downloadedBytes = 0;
+                        downloadedBytes_work = 0;
+                        rangeBytes = 0;
                     }
                 }
                 bis = new BufferedInputStream(response.contentStream);
-                bos = new CustomOutputStream(generateWriteStream(targetFile, response.totalLength, mDownloadRequest.getStartPos()));
+                bos = new CustomOutputStream(generateWriteStream(targetFile, response.totalLength, rangeBytes));
                 byte[] bytesTmp = new byte[STREAM_BUFFER];
                 int bytesLen;
                 long lastTimeMs = 0;
                 long currTime;
                 while ((bytesLen = bis.read(bytesTmp)) != -1) {
                     bos.customWrite(bytesTmp, 0, bytesLen);
-                    downloadedBytes += bytesLen;
+                    downloadBytes_once += bytesLen;
                     currTime = SystemClock.elapsedRealtime();
                     timeMsRecord = currTime;
                     if (currTime - lastTimeMs >= mDownloadRequest.getRate()) {
                         lastTimeMs = currTime;
+                        long downloadedBytes = downloadedBytes_work + downloadBytes_once;
                         mDelivery.postLoading(mDownloadRequest, downloadedBytes);
                         LogHelper.logError("I receive and downloaded " + downloadedBytes + " :)");
                     }
@@ -86,7 +89,7 @@ public class DownloadWorker {
                         return null;
                     }
                 }
-                LogHelper.logError("I read finish. bytesLen=" + bytesLen + " and total size=" + downloadedBytes);
+                LogHelper.logError("I read finish. bytesLen=" + bytesLen + " and total size=" + (downloadedBytes_work + downloadBytes_once));
             } catch (InterruptedException e) {
                 throw e;
             } catch (Exception e) {
@@ -123,7 +126,7 @@ public class DownloadWorker {
                 if (response != null) {
                     response.disconnect();
                 }
-                mDelivery.postLoading(mDownloadRequest, downloadedBytes);
+                downloadedBytes_work += downloadBytes_once;
                 try {
                     if (bos != null) {
                         bos.flush();
@@ -133,8 +136,12 @@ public class DownloadWorker {
                         bis.close();
                     }
                 } catch (IOException e) {
+                    // TODO "write failed: EBADF (Bad file number)" happen in really few cases
+                    // cannot find a way to avoid it
+                    downloadedBytes_work -= downloadBytes_once;
                     LogHelper.logError("unknown error", e);
                 }
+                mDelivery.postLoading(mDownloadRequest, downloadedBytes_work);
             }
             return new DownloadResult(error);
         }
@@ -154,7 +161,8 @@ public class DownloadWorker {
     private void validateServerData(DownloadRequest request, NetWorkResponse response) throws DownloadException {
         // TODO: 2016/1/26 and do not support 0 length download
         if (response.contentLength == 0 || response.totalLength == 0) {
-            throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE, "url(" + request.getOriginalUrl() + ") does not return content length");
+            throw new DownloadException(DownloadException.EXCEPTION_CODE_PARSE
+                    , "url(" + request.getOriginalUrl() + ") does not return content length");
         }
     }
 
