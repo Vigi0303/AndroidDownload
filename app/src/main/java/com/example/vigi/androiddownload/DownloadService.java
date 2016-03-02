@@ -153,20 +153,24 @@ public class DownloadService extends Service {
                 request.addRequestListener(new SimpleRequestListener() {
                     @Override
                     public void onFinish(DownloadResult result) {
-                        delete();
+                        deleteTaskInternal(taskId);
                     }
 
                     @Override
                     public void onCanceled() {
-                        delete();
-                    }
-
-                    private void delete() {
-                        TasksHolder.getInstance().removeAccessor(taskId);
+                        deleteTaskInternal(taskId);
                     }
                 });
+            } else {
+                deleteTaskInternal(taskId);
             }
+        } else {
+            deleteTaskInternal(taskId);
         }
+    }
+
+    private void deleteTaskInternal(int taskId) {
+        TasksHolder.getInstance().removeRequest(taskId);
         TasksHolder.getInstance().removeAccessor(taskId);
     }
 

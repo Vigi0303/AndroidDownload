@@ -2,12 +2,15 @@ package com.example.vigi.androiddownload.core;
 
 import android.os.SystemClock;
 
+import org.apache.http.conn.ConnectTimeoutException;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.ProtocolException;
@@ -94,10 +97,12 @@ public class DownloadWorker {
                 throw e;
             } catch (Exception e) {
                 if (e instanceof IOException) {
-                    if (e instanceof SocketException) {
-                        error = new DownloadException(DownloadException.NO_CONNECTION, e);
-                    } else if (e instanceof SocketTimeoutException) {
+                    if (e instanceof SocketTimeoutException || e instanceof ConnectTimeoutException) {
                         error = new DownloadException(DownloadException.SOCKET_TIMEOUT, e);
+                    } else if (e instanceof InterruptedIOException) {
+                        throw new InterruptedException();
+                    } else if (e instanceof SocketException) {
+                        error = new DownloadException(DownloadException.NO_CONNECTION, e);
                     } else if (e instanceof ProtocolException) {
                         error = new DownloadException(DownloadException.UNKNOWN_NETWORK, e);
                     } else {
@@ -175,6 +180,7 @@ public class DownloadWorker {
         public void customWrite(byte[] buffer, int offset, int length) throws DownloadException {
             try {
                 super.write(buffer, offset, length);
+                // TODO: 2016/3/2 add lock for file writing. be killed in API 23
             } catch (IOException e) {
                 throw new DownloadException(DownloadException.LOCAL_IO, e);
             }
